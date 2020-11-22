@@ -128,30 +128,29 @@ def affiliated_to(city: str) -> Callable[[dict], bool]:
     return where
 
 
-def with_no_more_than(number: int, what: str) -> Callable[[dict], bool]:
+def with_no_more_than(number: int, what: Callable[[dict], int]) -> Callable[[dict], bool]:
     """Returns a predicate for a publication that checks whether
     a property specified in `what` is less or equal to `number`.
+    ::
+
+        what(publication) <= number
 
     :param number: a number to compare with.
-    :param what: a property to check; supported values:
-                 - "authors".
+    :param what: a function that returns a value that
+                 should be less than `number`.
 
     :returns: a predicate.
-
-    :raises ValueError: if the provided `what` value is not supported.
     """
 
-    if what == 'authors':
-        def where(publication: dict[str, Any]) -> bool:
-            return len(publication['author']) <= number
-
-    try:
-        where  # NOQA.
-    except NameError:
-        raise ValueError(f'Invalid `what` value "{what}": '
-                         f'please see the documentation.')
+    def where(publication: dict[str, Any]) -> bool:
+        return what(publication) <= number
 
     return where
+
+
+def authors(publication: dict[str, Any]) -> int:
+    """Returns the number of authors of a publication."""
+    return len(unique(publication['author'], lambda x: x['authid']))
 
 
 if __name__ == '__main__':
@@ -162,7 +161,7 @@ if __name__ == '__main__':
     publications = '../../data/COMP/COMP-{}.json'
     publications = [publications.format(year) for year in range(1990, 1996 + 1)]
 
-    graph = parse(publications, with_no_more_than(50, 'authors'),
+    graph = parse(publications, with_no_more_than(50, authors),
                   log=timestamped)
 
     print()

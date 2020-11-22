@@ -186,7 +186,7 @@ def coauthors_partition(graph: nx.Graph, publications: Any, partition_size: int)
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
-    from pfe.parse import parse, with_no_more_than
+    from pfe.parse import parse, with_no_more_than, authors
     from pfe.misc import log
 
     # plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern Roman']})
@@ -194,7 +194,7 @@ if __name__ == '__main__':
 
     # Construct a graph.
     publications = [f'../../../data/COMP/COMP-{year}.json' for year in range(1990, 2002 + 1)]
-    graph = parse(publications, with_no_more_than(50, 'authors'),
+    graph = parse(publications, with_no_more_than(50, authors),
                   log=log.timestamped)
 
     print()
