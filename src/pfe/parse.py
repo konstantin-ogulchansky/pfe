@@ -106,7 +106,7 @@ def parse(paths: Union[str, list[str]],
 
 
 def affiliated_to(city: str) -> Callable[[dict], bool]:
-    """Returns a predicate of a publication that returns `True` if
+    """Returns a predicate for a publication that returns `True` if
     a publication is affiliated to `city` and `False` otherwise.
 
     Note: a publication is affiliated to `city` if there exist a coauthor
@@ -131,7 +131,17 @@ def affiliated_to(city: str) -> Callable[[dict], bool]:
 
 
 def with_no_more_than(number: int, what: str) -> Callable[[dict], bool]:
-    """..."""
+    """Returns a predicate for a publication that checks whether
+    a property specified in `what` is less or equal to `number`.
+
+    :param number: a number to compare with.
+    :param what: a property to check; supported values:
+                 - "authors".
+
+    :returns: a predicate.
+
+    :raises ValueError: if the provided `what` value is not supported.
+    """
 
     if what == 'authors':
         def where(publication: dict[str, Any]) -> bool:
