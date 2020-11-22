@@ -193,7 +193,7 @@ if __name__ == '__main__':
     # plt.rc('text', usetex=True)
 
     # Construct a graph.
-    publications = [f'../../../data/json/COMP-{year}.json' for year in range(1990, 2018 + 1)]
+    publications = [f'../../../data/COMP/COMP-{year}.json' for year in range(1990, 2002 + 1)]
     graph = parse(publications, with_no_more_than(50, 'authors'),
                   log=log.timestamped)
 

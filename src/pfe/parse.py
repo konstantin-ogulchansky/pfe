@@ -13,17 +13,16 @@ from pfe.misc.log import nothing
 
 def parse(paths: Union[str, list[str]],
           where: Optional[Callable[[dict], bool]] = None,
-          into: Optional[nx.Graph] = None,
           limit: Optional[int] = None,
+          into: Optional[nx.Graph] = None,
           log: Optional[Callable] = nothing) -> nx.Graph:
     """Parses a collaboration network from JSON files and
     constructs a social collaboration graph.
 
     :param paths: paths to JSON files with publications.
     :param where: a predicate to filter parsed publications.
+    :param limit: limits the number of publications to construct a graph from.
     :param into: a graph to add parsed nodes and edges into (optional).
-    :param limit: limits the number of publications
-                  to construct a graph from.
     :param log: called to log steps of the execution.
 
     :returns: a constructed social collaboration graph.
@@ -59,8 +58,7 @@ def parse(paths: Union[str, list[str]],
     # Parse all files with publications.
     for path in paths:
         with open(path, 'r') as file:
-            data = file.read()
-            data = json.loads(data)
+            data = json.load(file)
 
         publications = data['search-results']['entry']
 
@@ -161,14 +159,13 @@ if __name__ == '__main__':
 
     # A path template to a single JSON file
     # with publications from a specific year.
-    publications = '../data/json/COMP-{}.json'
+    publications = '../../data/COMP/COMP-{}.json'
     publications = [publications.format(year) for year in range(1990, 1996 + 1)]
 
     graph = parse(publications, with_no_more_than(50, 'authors'),
                   log=timestamped)
 
-    print('Unique Names:',
-          len({node['name'] for _, node in graph.nodes(data=True)}))
-
+    print()
+    print('Unique names:', len({node['name'] for _, node in graph.nodes(data=True)}))
     print('Nodes:', graph.number_of_nodes())
     print('Edges:', graph.number_of_edges())
