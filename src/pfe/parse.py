@@ -8,19 +8,20 @@ from typing import Optional, Callable, Any, Union
 import networkx as nx
 
 from pfe.misc.collections import unique
+from pfe.misc.log import nothing
 
 
 def parse(paths: Union[str, list[str]],
           where: Optional[Callable[[dict], bool]] = None,
           into: Optional[nx.Graph] = None,
           limit: Optional[int] = None,
-          log: Optional[Callable] = None) -> nx.Graph:
+          log: Optional[Callable] = nothing) -> nx.Graph:
     """Parses a collaboration network from JSON files and
     constructs a social collaboration graph.
 
     :param paths: paths to JSON files with publications.
     :param where: a predicate to filter parsed publications.
-    :param into: a graph to parse publications into (optional).
+    :param into: a graph to add parsed nodes and edges into (optional).
     :param limit: limits the number of publications
                   to construct a graph from.
     :param log: called to log steps of the execution.
@@ -49,9 +50,6 @@ def parse(paths: Union[str, list[str]],
             return False
 
         return True
-
-    if log is None:
-        log = lambda *args, **kwargs: ...  # Do nothing.
 
     graph = into or nx.Graph()
 
@@ -140,7 +138,7 @@ def with_no_more_than(number: int, what: str) -> Callable[[dict], bool]:
             return len(publication['author']) <= number
 
     try:
-        where
+        where  # NOQA.
     except NameError:
         raise ValueError(f'Invalid `what` value "{what}": '
                          f'please see the documentation.')
@@ -149,17 +147,18 @@ def with_no_more_than(number: int, what: str) -> Callable[[dict], bool]:
 
 
 if __name__ == '__main__':
-    import matplotlib.pyplot as plt
+    from pfe.misc.log import timestamped
 
-    import pfe.misc.log
+    # A path template to a single JSON file
+    # with publications from a specific year.
+    publications = '../data/json/COMP-{}.json'
+    publications = [publications.format(year) for year in range(1990, 1996 + 1)]
 
-    publications = [f'../../data/json/COMP-{year}.json' for year in range(1990, 1996 + 1)]
-    graph = parse(publications, with_no_more_than(100, 'authors'),
-                  log=pfe.misc.log.timestamped)
+    graph = parse(publications, with_no_more_than(50, 'authors'),
+                  log=timestamped)
 
-    print('Names:', len({node['name'] for _, node in graph.nodes(data=True)}))
+    print('Unique Names:',
+          len({node['name'] for _, node in graph.nodes(data=True)}))
+
     print('Nodes:', graph.number_of_nodes())
     print('Edges:', graph.number_of_edges())
-
-    nx.draw(graph)
-    plt.show()
