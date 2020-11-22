@@ -37,17 +37,26 @@ def clean(data: dict[str, Any]) -> list[dict[str, Any]]:
     def authors(publication):
         return author if isinstance(author := publication['author'], list) else [author]
 
-    return [{
-        'id': publication.get('dc:identifier'),
-        'date': publication.get('prism:coverDate'),
-        'authors': [{
-            'id': author.get('authid'),
-            'name': author.get('authname'),
-            'affiliation_id': (id := author.get('afid')),
-            'affiliation_city': city(publication, id),
-            'affiliation_country': country(publication, id)
-        } for author in authors(publication)]
-    } for publication in data['search-results']['entry']]
+    result = []
+
+    for publication in data['search-results']['entry']:
+        try:
+            result.append({
+                'id': publication.get('dc:identifier'),
+                'date': publication.get('prism:coverDate'),
+                'authors': [{
+                    'id': author.get('authid'),
+                    'name': author.get('authname'),
+                    'affiliation_id': (id := author.get('afid')),
+                    'affiliation_city': city(publication, id),
+                    'affiliation_country': country(publication, id)
+                } for author in authors(publication)]
+            })
+        except KeyError as error:
+            log(f'Key {str(error)} not found in \n'
+                f'  {publication}')
+
+    return result
 
 
 def load(*, from_: Union[str, Path]) -> dict[str, Any]:
@@ -74,14 +83,14 @@ def save(data: list[dict[str, Any]], *, to: Union[str, Path]):
 
 
 if __name__ == '__main__':
-    import pfe.misc.log
+    from datetime import datetime
 
     verbose = True
 
     if verbose:
-        log = pfe.misc.log.timestamped
+        log = lambda *args, **kwargs: print(f'[{datetime.now()}]', *args, **kwargs)
     else:
-        log = pfe.misc.log.nothing
+        log = lambda *args, **kwargs: ...
 
     log('Starting...')
 
