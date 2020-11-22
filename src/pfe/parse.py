@@ -71,16 +71,16 @@ def parse(paths: Union[str, list[str]],
             if not appropriate(publication):
                 continue
 
-            # Consider only `limit` publications.
-            if limit is not None and (limit := limit - 1) < 0:
-                break
-
             authors = publication['author']
             authors = unique(authors, lambda x: x['authid'])
 
             # Do not consider publications with a single unique author.
             if len(authors) <= 1:
                 continue
+
+            # Consider only `limit` publications.
+            if limit is not None and (limit := limit - 1) < 0:
+                break
 
             # Add nodes.
             for author in authors:
