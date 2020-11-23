@@ -2,46 +2,38 @@
 #    - check regular data
 #    - check binned data?
 
-from typing import Tuple
-
+import networkx as nx
 import powerlaw as pl
 
-from pfe.tasks import statistics
 from pfe.misc.collections import truncate
 from pfe.tasks.statistics import Statistic
 
 
-def fit(statistic: Statistic) -> Tuple[float, float, float, float]:
-    """..."""
+def degree_distribution(graph: nx.Graph) -> Statistic:
+    """Computes the degree distribution distribution.
 
-    # TODO: Implement.
+    :param graph: a `networkx.Graph`.
 
-    fit = pl.Fit(list(statistic.sequence()), discrete=True)
+    :returns: a dictionary representing the distribution,
+              where key is a degree and a value is the number
+              of times this degree is found in the graph.
+    """
 
-    # TODO: Remove.
-    fit.plot_pdf(original_data=True)
-    fit.plot_pdf()
-    fit.power_law.plot_pdf(fit.data_original, color='black')
-    fit.power_law.plot_pdf(color='yellow')
+    distribution = {}
 
-    # Check which distribution fits the best.
-    # Probably there is a better distribution than the power law.
-    print(fit.distribution_compare('power_law', 'lognormal', normalized_ratio=True))
+    for node in graph.nodes:
+        degree = graph.degree[node]
 
-    return (
-        fit.power_law.alpha,
-        fit.power_law.sigma,
-        fit.power_law.xmin,
-        fit.power_law.xmax
-    )
+        distribution.setdefault(degree, 0)
+        distribution[degree] += 1
+
+    return Statistic(distribution)
 
 
 if __name__ == '__main__':
-    from itertools import combinations
-
     import matplotlib.pyplot as plt
 
-    from pfe.parse import parse
+    from pfe.parse_cleaned_data import parse, publications_from
     from pfe.misc.log import timestamped
 
     # In order to test the hypothesis, 3 steps should be taken:
@@ -59,24 +51,20 @@ if __name__ == '__main__':
     log = timestamped
     log('Starting...')
 
-    # TODO: Uncomment when drawing plots for the report.
-    # plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern Roman']})
-    # plt.rc('text', usetex=True)
-
-    years = (1990, 2002)
     domain = 'COMP'
-    publications = [f'../../../data/{domain}/{domain}-{year}.json'
-                    for year in range(years[0], years[1] + 1)]
+    years = (1990, 2018)
+    files = [f'../../../data/clean/{domain}/{domain}-{year}.json'
+             for year in range(years[0], years[1] + 1)]
 
-    # Construct the graph.
-    graph = parse(publications, log=log)
+    # Construct a graph.
+    graph = parse(publications_from(files, skip_100=True, log=log))
 
     log(f'Read a graph with '
         f'{graph.number_of_nodes()} nodes and '
         f'{graph.number_of_edges()} edges.')
 
     # Compute the "original" (not truncated) degree distribution.
-    original = statistics.publications_per_author(graph)
+    original = degree_distribution(graph)
     original_normalized = original.normalized()
 
     # Fit the hypothesis.
@@ -121,32 +109,40 @@ if __name__ == '__main__':
         circles := dict(s=25, facecolors='none', edgecolors='black'),
     ]
 
-    fig, axs = plt.subplots(3)
+    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern Roman']})
+    plt.rc('text', usetex=True)
 
-    # Fig 1: raw original data.
-    ax = axs[0]
-    ax.grid(linestyle='--')
-    ax.scatter(original.keys(), original.values(), **circles)
+    fig, axs = plt.subplots()
 
-    ax.set_xscale('log')
-    ax.set_yscale('log')
-
-    ax.set_xlim(10 ** -1, 10 ** 4)
-    ax.set_ylim(10 ** -1, 10 ** 5)
+    # # Fig 1: raw original data.
+    # ax = axs[0]
+    # ax.grid(linestyle='--')
+    # ax.set_axisbelow(True)
+    # ax.scatter(original.keys(), original.values(), **circles)
+    #
+    # ax.set_xscale('log')
+    # ax.set_yscale('log')
+    #
+    # ax.set_xlim(10 ** -1, 10 ** 4)
+    # ax.set_ylim(10 ** -1, 10 ** 5)
 
     # Fig 2: normalized original data.
     included = truncate(original_normalized, x_min, x_max)
     excluded = {x: y for x, y in original_normalized.items() if x not in included}
 
-    ax = axs[1]
+    ax = axs
     ax.grid(linestyle='--')
+    ax.set_axisbelow(True)
     ax.scatter(excluded.keys(), excluded.values(), **crosses)
     ax.scatter(included.keys(), included.values(), **circles)
+
+    ax.set_xlim(10 ** -1, 10 ** 4)
+    ax.set_ylim(10 ** -6, 10 ** 0)
 
     # Add vertical lines for `x_min` and `x_max`.
     def vertical_line(x, label, ax):
         ax.axvline(x=x, linestyle='dashed', color='black', linewidth=0.75)
-        ax.text(x - 1, 0.001, fr'$x_{{{label}}} = {x}$', rotation=90)
+        ax.text(x + 10, 0.005, fr'$x_{{{label}}} = {x}$', rotation=90)
 
     if x_min is not None:
         vertical_line(x=x_min, label='min', ax=ax)
@@ -156,17 +152,18 @@ if __name__ == '__main__':
     # The empirical distribution.
     fit.plot_pdf(ax=ax, original_data=True, color=red, linestyle='--')
 
-    # Fig 3: truncated data.
-    ax = axs[2]
-    ax.grid(linestyle='--')
-    ax.scatter(truncated_normalized.keys(), truncated_normalized.values(), **circles)
+    # # Fig 3: truncated data.
+    # ax = axs[2]
+    # ax.grid(linestyle='--')
+    # ax.set_axisbelow(True)
+    # ax.scatter(truncated_normalized.keys(), truncated_normalized.values(), **circles)
+    #
+    # # The empirical distribution.
+    # fit.plot_pdf(ax=ax, color=red, linestyle='--')
+    # # The theoretical distribution.
+    # fit.power_law.plot_pdf(ax=ax, color=blue, linestyle='-.')
 
-    # The empirical distribution.
-    fit.plot_pdf(ax=ax, color=red, linestyle='--')
-    # The theoretical distribution.
-    fit.power_law.plot_pdf(ax=ax, color=blue, linestyle='-.')
-
-    plt.savefig('...eps')
+    plt.savefig('some.eps')
     plt.show()
 
     log('Finished plotting the data.')

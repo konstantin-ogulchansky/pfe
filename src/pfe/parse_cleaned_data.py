@@ -5,7 +5,7 @@ TODO: Generalize `parse.py` and remove this file.
 """
 
 import json
-from typing import Optional, Callable, Any, Union
+from typing import Optional, Callable, Union
 
 import networkx as nx
 

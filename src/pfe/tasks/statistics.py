@@ -7,7 +7,7 @@ from typing import Any, Iterable, Iterator, Tuple, Optional
 import networkx as nx
 import community as cm
 
-from pfe.misc.collections import truncate
+from pfe.misc.collections import truncate, unique
 
 
 class Statistic:
@@ -72,23 +72,29 @@ class Statistic:
         return sum(k * n for k, n in self._p.items()) / self._n
 
 
-def publications_per_author(graph: nx.Graph) -> Statistic:
+def publications_per_author(publications: list[dict]) -> Statistic:
     """Computes the distribution of publications per author.
 
-    :param graph: a `networkx.Graph`.
+    :param publications: a list of publications (in a raw format).
 
-    :returns: a dictionary representing the distribution,
-              where key is a degree and a value is the number
-              of times this degree is found in the graph.
+    :returns: a dictionary representing the distribution.
     """
+
+    authors = {}
+
+    for publication in publications:
+        publication_authors = [int(x['id']) for x in publication['authors']]
+        publication_authors = unique(publication_authors, lambda x: x)
+
+        for author in publication_authors:
+            authors.setdefault(author, 0)
+            authors[author] += 1
 
     distribution = {}
 
-    for node in graph.nodes:
-        degree = graph.degree[node]
-
-        distribution.setdefault(degree, 0)
-        distribution[degree] += 1
+    for publications in authors.values():
+        distribution.setdefault(publications, 0)
+        distribution[publications] += 1
 
     return Statistic(distribution)
 
@@ -98,9 +104,7 @@ def authors_per_publication(publications: list[dict]) -> Statistic:
 
     :param publications: a list of publications (in a raw format).
 
-    :returns: a dictionary representing the distribution,
-              where key is a  and a value is the number
-              of times this degree is found in the graph.
+    :returns: a dictionary representing the distribution.
     """
 
     distribution = {}
@@ -174,19 +178,19 @@ def partition_of_authors(graph: nx.Graph, publications: Any, partition_size: int
 
 
 if __name__ == '__main__':
-    from pfe.parse import parse
+    from pfe.parse_cleaned_data import publications_from
     from pfe.misc.log import timestamped
 
-    years = (1990, 1996)
     domain = 'COMP'
-    publications = [f'../../../data/{domain}/{domain}-{year}.json'
-                    for year in range(years[0], years[1] + 1)]
+    years = (1990, 1996)
+    files = [f'../../../data/{domain}/{domain}-{year}.json'
+             for year in range(years[0], years[1] + 1)]
 
     # Construct a graph.
-    graph = parse(publications, log=timestamped)
+    publications = publications_from(files, log=timestamped)
 
     # Calculate a statistic.
-    statistic = publications_per_author(graph)
+    statistic = publications_per_author(publications)
     normalized = statistic.normalized()
 
     # Print the statistic.
