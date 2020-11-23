@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
     domain = 'COMP'
     years = (1990, 2018)
-    paths = [f'../../../../cleaned-data/{domain}/{domain}-{year}.json'
+    paths = [f'../../../../data/clean/{domain}/{domain}-{year}.json'
              for year in range(years[0], years[1] + 1)]
 
     # Construct a graph.
@@ -26,6 +26,8 @@ if __name__ == '__main__':
     for path in paths:
         with open(path, 'r') as file:
             data = json.load(file)
+
+        log(f'Loaded `{path}`.')
 
         # We consider only publications that have less than 100 authors,
         # because it seems that if a publication has 100 and more authors,

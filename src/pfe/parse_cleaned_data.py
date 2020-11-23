@@ -1,5 +1,7 @@
 """
 Contains functions for constructing graphs from JSON files.
+
+TODO: Generalize `parse.py` and remove this file.
 """
 
 import json
@@ -103,69 +105,17 @@ def parse(paths: Union[str, list[str]],
     return graph
 
 
-def affiliated_to(city: str) -> Callable[[dict], bool]:
-    """Returns a predicate for a publication that returns `True` if
-    a publication is affiliated to `affiliation_city` and `False` otherwise.
-
-    Note: a publication is affiliated to `affiliation_city` if there exist a coauthor
-          of this publication that is affiliated to `affiliation_city`.
-
-    :param city: a city for publications to be affiliated to.
-
-    :returns: a predicate.
-    """
-
-    def where(publication: dict[str, Any]) -> bool:
-        if not (affiliation := publication['affiliation_id']):
-            return False
-
-        if isinstance(affiliation, list):
-            return any(x['affiliation_city'] == city
-                       for x in affiliation)
-        else:
-            return affiliation['affiliation_city'] == city
-
-    return where
-
-
-def with_no_more_than(number: int, what: str) -> Callable[[dict], bool]:
-    """Returns a predicate for a publication that checks whether
-    a property specified in `what` is less or equal to `number`.
-
-    :param number: a number to compare with.
-    :param what: a property to check; supported values:
-                 - "authors".
-
-    :returns: a predicate.
-
-    :raises ValueError: if the provided `what` value is not supported.
-    """
-
-    if what == 'authors':
-        def where(publication: dict[str, Any]) -> bool:
-            return len(publication['authors']) <= number
-
-    try:
-        where  # NOQA.
-    except NameError:
-        raise ValueError(f'Invalid `what` value "{what}": '
-                         f'please see the documentation.')
-
-    return where
-
-
 if __name__ == '__main__':
     from pfe.misc.log import timestamped
 
-    # A path template to a single JSON file
-    # with publications from a specific year.
-    publications = '../../cleaned-data/COMP/COMP-{}.json'
-    publications = [publications.format(year) for year in range(1990, 1996 + 1)]
+    years = (1990, 2018)
+    domain = 'COMP'
+    publications = [f'../../data/clean/{domain}/{domain}-{year}.json'
+                    for year in range(years[0], years[1] + 1)]
 
     graph = parse(publications, log=timestamped)
 
-    print('Unique Names:',
-          len({node['name'] for _, node in graph.nodes(data=True)}))
-
+    print()
+    print('Unique names:', len({node['name'] for _, node in graph.nodes(data=True)}))
     print('Nodes:', graph.number_of_nodes())
     print('Edges:', graph.number_of_edges())

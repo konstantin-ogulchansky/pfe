@@ -158,11 +158,10 @@ if __name__ == '__main__':
 
     years = (1990, 2018)
     domain = 'COMP'
-    publications = [f'../../../data/{domain}/{domain}-{year}.json'
+    publications = [f'../../data/raw/{domain}/{domain}-{year}.json'
                     for year in range(years[0], years[1] + 1)]
 
-    graph = parse(publications, with_no_more_than(50, authors),
-                  log=timestamped)
+    graph = parse(publications, log=timestamped)
 
     print()
     print('Unique names:', len({node['name'] for _, node in graph.nodes(data=True)}))

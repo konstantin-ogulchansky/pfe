@@ -16,7 +16,7 @@ if __name__ == '__main__':
 
     years = (1990, 2018)
     domain = 'COMP'
-    publications = [f'../../../../data/{domain}/{domain}-{year}.json'
+    publications = [f'../../../../data/raw/{domain}/{domain}-{year}.json'
                     for year in range(years[0], years[1] + 1)]
 
     # Construct a graph.
