@@ -1,13 +1,13 @@
 """
 Calculating and plotting the distribution of
-the number of authors per publication.
+the number of communities per publication.
 """
 
 import matplotlib.pyplot as plt
 
-from pfe.parse_cleaned_data import publications_from
-from pfe.tasks.statistics import authors_per_publication
 from pfe.misc.log import timestamped
+from pfe.parse_cleaned_data import parse, publications_from
+from pfe.tasks.statistics import communities_per_publication
 
 
 if __name__ == '__main__':
@@ -19,18 +19,16 @@ if __name__ == '__main__':
     files = [f'../../../../data/clean/{domain}/{domain}-{year}.json'
              for year in range(years[0], years[1] + 1)]
 
-    # Load publications.
+    # Load publications and construct a graph.
     publications = publications_from(files, skip_100=True, log=log)
+    graph = parse(publications)
+
+    log('Constructed a graph.')
 
     # Calculate the statistic.
-    statistic = authors_per_publication(publications)
+    statistic = communities_per_publication(graph, publications)
 
-    # Print the statistic.
-    print()
-    print('Authors   Times')
-    for x, y in sorted(statistic.items(), key=lambda z: z[0]):
-        print(f'{x:>7}   {y:>5}')
-    print()
+    log('Computed the statistic.')
 
     # Plot the statistic.
     x = statistic.keys()
@@ -51,13 +49,9 @@ if __name__ == '__main__':
     ax.grid(linestyle='--')
     ax.scatter(x, y, **circles)
 
-    ax.set_xscale('log')
     ax.set_yscale('log')
 
-    ax.set_xlim(10 ** -1, 10 ** 4)
-    ax.set_ylim(10 ** -1, 10 ** 5)
-
-    plt.savefig(f'{domain}-{years[0]}-{years[1]}-app.eps')
+    plt.savefig(f'{domain}-{years[0]}-{years[1]}-cpp.eps')
     plt.show()
 
     log('Finished.')

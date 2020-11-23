@@ -5,6 +5,7 @@ A module for calculating statistics on collaboration networks.
 from typing import Any, Iterable, Iterator, Tuple, Optional
 
 import networkx as nx
+import community as cm
 
 from pfe.misc.collections import truncate
 
@@ -114,22 +115,28 @@ def authors_per_publication(publications: list[dict]) -> Statistic:
 
 
 def communities_per_publication(graph: nx.Graph, publications: Any) -> Statistic:
-    """Computes the distributions of the number of communities per publication."""
+    """Computes the distributions of the number of communities per publication.
 
-    def louvain(_):
-        raise NotImplementedError
+    TODO.
 
-    communities = louvain(graph)
+    :param graph: ...
+    :param publications: ...
+
+    :returns: ...
+    """
+
+    communities = cm.best_partition(graph)
     distribution = {}
 
     for publication in publications:
-        partition = set()
+        try:
+            partition = {communities[int(x['id'])] for x in publication['authors']}
+            partition_size = len(partition)
 
-        for author in publication.authors:
-            community = next(x for x in communities if author.id in x)
-            partition.add(community.id)
-
-        distribution[len(partition)] += 1
+            distribution.setdefault(partition_size, 0)
+            distribution[partition_size] += 1
+        except KeyError:
+            pass
 
     return Statistic(distribution)
 
