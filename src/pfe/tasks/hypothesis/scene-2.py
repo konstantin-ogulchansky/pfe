@@ -7,7 +7,7 @@ import powerlaw as pl
 
 from pfe.misc.collections import truncate
 from pfe.misc.log import timestamped
-from pfe.parse_cleaned_data import publications_from, parse
+from pfe.parse import publications_from, parse
 from pfe.tasks.hypothesis import degree_distribution
 
 

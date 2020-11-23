@@ -5,7 +5,7 @@ the number of authors per publication.
 
 import matplotlib.pyplot as plt
 
-from pfe.parse_cleaned_data import publications_from
+from pfe.parse import publications_from
 from pfe.tasks.statistics import authors_per_publication
 from pfe.misc.log import timestamped
 

@@ -6,7 +6,7 @@ the number of communities per publication.
 import matplotlib.pyplot as plt
 
 from pfe.misc.log import timestamped
-from pfe.parse_cleaned_data import parse, publications_from
+from pfe.parse import parse, publications_from
 from pfe.tasks.statistics import communities_per_publication
 
 
