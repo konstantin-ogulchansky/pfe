@@ -40,10 +40,9 @@ if __name__ == '__main__':
     from itertools import combinations
 
     import matplotlib.pyplot as plt
-    import networkx as nx
 
-    from pfe.parse import parse, with_no_more_than
-    import pfe.misc.log
+    from pfe.parse import parse
+    from pfe.misc.log import timestamped
 
     # In order to test the hypothesis, 3 steps should be taken:
     #   1. Fit the data: this step is performed in order to find
@@ -57,23 +56,20 @@ if __name__ == '__main__':
     #      (and, of course, other distributions).
     #   4. Test the hypothesis via K-S test.
 
-    verbose = True
-
-    if verbose:
-        log = pfe.misc.log.timestamped
-    else:
-        log = pfe.misc.log.nothing
-
+    log = timestamped
     log('Starting...')
 
     # TODO: Uncomment when drawing plots for the report.
     # plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern Roman']})
     # plt.rc('text', usetex=True)
 
-    # Read the graph and calculate the statistic.
-    publications = [f'../../../data/json/COMP-{year}.json' for year in range(1990, 2008 + 1)]
-    graph = parse(publications, with_no_more_than(50, 'authors'),
-                  log=log)
+    years = (1990, 2002)
+    domain = 'COMP'
+    publications = [f'../../../data/{domain}/{domain}-{year}.json'
+                    for year in range(years[0], years[1] + 1)]
+
+    # Construct the graph.
+    graph = parse(publications, log=log)
 
     log(f'Read a graph with '
         f'{graph.number_of_nodes()} nodes and '
@@ -121,8 +117,8 @@ if __name__ == '__main__':
     ]
 
     styles = [
-        crosses := dict(s=25, color='black', marker='x', alpha=0.75),
-        circles := dict(s=25, facecolors='none', edgecolors='black', alpha=0.75),
+        crosses := dict(s=25, color='black', marker='x'),
+        circles := dict(s=25, facecolors='none', edgecolors='black'),
     ]
 
     fig, axs = plt.subplots(3)
@@ -134,6 +130,9 @@ if __name__ == '__main__':
 
     ax.set_xscale('log')
     ax.set_yscale('log')
+
+    ax.set_xlim(10 ** -1, 10 ** 4)
+    ax.set_ylim(10 ** -1, 10 ** 5)
 
     # Fig 2: normalized original data.
     included = truncate(original_normalized, x_min, x_max)
@@ -167,6 +166,7 @@ if __name__ == '__main__':
     # The theoretical distribution.
     fit.power_law.plot_pdf(ax=ax, color=blue, linestyle='-.')
 
+    plt.savefig('...eps')
     plt.show()
 
     log('Finished plotting the data.')

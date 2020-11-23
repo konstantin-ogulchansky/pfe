@@ -3,7 +3,6 @@ A module for calculating statistics on collaboration networks.
 """
 
 from typing import Any, Iterable, Iterator, Tuple, Optional
-from itertools import chain
 
 import networkx as nx
 
@@ -49,57 +48,38 @@ class Statistic:
         return Statistic(truncate(self._p, min, max))
 
     def sequence(self) -> Iterable[int]:
-        """Returns the distribution values as a sequence.
+        """Returns the distribution values as a sequence."""
 
-        For example,
-        >>> x = Statistic({1: 1, 2: 2})
-        >>> list(x.sequence())
-        [1, 2, 2]
-        """
-        return chain.from_iterable(
-            [k] * n for k, n in self._p.items()
-        )
+        for k, n in self._p.items():
+            while (n := n - 1) >= 0:
+                yield k
 
     def normalized(self) -> dict[int, float]:
-        """Returns a normalized distribution.
-
-        For example,
-        >>> x = Statistic({1: 1, 2: 2})
-        >>> x.normalized()
-        {1: 0.3333333333333333, 2: 0.6666666666666666}
-        """
+        """Returns a normalized distribution."""
         return {k: n / self._n for k, n in self._p.items()}
+
+    def min(self) -> int:
+        """Returns the minimum degree."""
+        return min(self._p.keys())
+
+    def max(self) -> int:
+        """Returns the maximum degree."""
+        return max(self._p.keys())
+
+    def mean(self) -> float:
+        """Returns the mean value."""
+        return sum(k * n for k, n in self._p.items()) / self._n
 
 
 def publications_per_author(graph: nx.Graph) -> Statistic:
     """Computes the distribution of publications per author.
 
-    In fact, this is the degree distribution of the graph since nodes
-    represent authors and edges represent publications. Thus, to calculate
-    this statistic, we need to consider how many publication each author has
-    (i.e., their degree in the graph).
-
-    The degree distribution is defined as
-
-        P(k) = n_k / n,
-
-    where `n_k` is the number of nodes with the degree `k`, and `n` is the
-    total number of nodes in the graph.
-
     :param graph: a `networkx.Graph`.
 
-    :returns: a dictionary representing the degree distribution, where
-              keys are degrees and values are their corresponding fractions
-              in the graph.
+    :returns: a dictionary representing the distribution,
+              where key is a degree and a value is the number
+              of times this degree is found in the graph.
     """
-
-    # TODO:
-    #   Is this the degree distribution though?
-    #   Maybe not, considering that the degree distribution is a *fraction*
-    #   of publications, while we need to count the number of publications.
-
-    # TODO:
-    #   Update the docstring.
 
     distribution = {}
 
@@ -112,17 +92,20 @@ def publications_per_author(graph: nx.Graph) -> Statistic:
     return Statistic(distribution)
 
 
-def authors_per_publication(graph: nx.Graph, publications: Any) -> Statistic:
-    """Computes the distribution of authors per publication."""
+def authors_per_publication(publications: list[dict]) -> Statistic:
+    """Computes the distribution of authors per publication.
 
-    # How do we even compute this, having a plain graph?
-    # We need raw data to be able to differentiate publications
-    # since edges of a graph do not contain this information.
+    :param publications: a list of publications (in a raw format).
+
+    :returns: a dictionary representing the distribution,
+              where key is a  and a value is the number
+              of times this degree is found in the graph.
+    """
 
     distribution = {}
 
     for publication in publications:
-        number = len(publication.authors)
+        number = len({author['id'] for author in publication['authors']})
 
         distribution.setdefault(number, 0)
         distribution[number] += 1
@@ -186,21 +169,19 @@ def coauthors_partition(graph: nx.Graph, publications: Any, partition_size: int)
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
-    from pfe.parse import parse, with_no_more_than, authors
-    from pfe.misc import log
+    from pfe.parse import parse
+    from pfe.misc.log import timestamped
 
     # plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern Roman']})
     # plt.rc('text', usetex=True)
 
-    # Construct a graph.
-    publications = [f'../../../data/COMP/COMP-{year}.json' for year in range(1990, 2002 + 1)]
-    graph = parse(publications, with_no_more_than(50, authors),
-                  log=log.timestamped)
+    years = (1990, 2018)
+    domain = 'COMP'
+    publications = [f'../../../data/{domain}/{domain}-{year}.json'
+                    for year in range(years[0], years[1] + 1)]
 
-    print()
-    print('Nodes:', graph.number_of_nodes())
-    print('Edges:', graph.number_of_edges())
-    print()
+    # Construct a graph.
+    graph = parse(publications, log=timestamped)
 
     # Calculate statistics.
     statistic = publications_per_author(graph)
@@ -228,6 +209,5 @@ if __name__ == '__main__':
     ax.set_xlim(10 ** -1, 10 ** 4)
     ax.set_ylim(10 ** -1, 10 ** 5)
 
-    # plt.savefig('first.eps', format='eps')
-
+    plt.savefig(f'{domain}-{years[0]}-{years[1]}.eps')
     plt.show()

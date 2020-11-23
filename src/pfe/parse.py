@@ -50,7 +50,7 @@ def parse(paths: Union[str, list[str]],
 
         return True
 
-    graph = into or nx.Graph()
+    graph = into if into is not None else nx.Graph()
 
     if not isinstance(paths, list):
         paths = [paths]
@@ -110,7 +110,7 @@ def affiliated_to(city: str) -> Callable[[dict], bool]:
     Note: a publication is affiliated to `city` if there exist a coauthor
           of this publication that is affiliated to `city`.
 
-    :param city: a city for publications to be affiliated to.
+    :param city: a city that publications should be affiliated to.
 
     :returns: a predicate.
     """
@@ -156,10 +156,10 @@ def authors(publication: dict[str, Any]) -> int:
 if __name__ == '__main__':
     from pfe.misc.log import timestamped
 
-    # A path template to a single JSON file
-    # with publications from a specific year.
-    publications = '../../data/COMP/COMP-{}.json'
-    publications = [publications.format(year) for year in range(1990, 1996 + 1)]
+    years = (1990, 2018)
+    domain = 'COMP'
+    publications = [f'../../../data/{domain}/{domain}-{year}.json'
+                    for year in range(years[0], years[1] + 1)]
 
     graph = parse(publications, with_no_more_than(50, authors),
                   log=timestamped)
