@@ -134,7 +134,7 @@ def communities_per_publication(graph: nx.Graph, publications: Any) -> Statistic
     return Statistic(distribution)
 
 
-def coauthors_partition(graph: nx.Graph, publications: Any, partition_size: int):
+def partition_of_authors(graph: nx.Graph, publications: Any, partition_size: int):
     """..."""
 
     def louvain(_):
@@ -167,15 +167,10 @@ def coauthors_partition(graph: nx.Graph, publications: Any, partition_size: int)
 
 
 if __name__ == '__main__':
-    import matplotlib.pyplot as plt
-
     from pfe.parse import parse
     from pfe.misc.log import timestamped
 
-    # plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern Roman']})
-    # plt.rc('text', usetex=True)
-
-    years = (1990, 2018)
+    years = (1990, 1996)
     domain = 'COMP'
     publications = [f'../../../data/{domain}/{domain}-{year}.json'
                     for year in range(years[0], years[1] + 1)]
@@ -183,31 +178,12 @@ if __name__ == '__main__':
     # Construct a graph.
     graph = parse(publications, log=timestamped)
 
-    # Calculate statistics.
+    # Calculate a statistic.
     statistic = publications_per_author(graph)
     normalized = statistic.normalized()
 
-    # Plot statistics.
-    styles = [
-        crosses := dict(s=25, color='black', marker='x'),
-        circles := dict(s=25, facecolors='none', edgecolors='black'),
-    ]
-
-    x = statistic.keys()
-    y = statistic.values()
-
-    plt.figure()
-
-    ax = plt.gca()
-    ax.set_axisbelow(True)
-    ax.grid(linestyle='--')
-    ax.scatter(x, y, **circles)
-
-    ax.set_xscale('log')
-    ax.set_yscale('log')
-
-    ax.set_xlim(10 ** -1, 10 ** 4)
-    ax.set_ylim(10 ** -1, 10 ** 5)
-
-    plt.savefig(f'{domain}-{years[0]}-{years[1]}.eps')
-    plt.show()
+    # Print the statistic.
+    print()
+    print('Degree   Fraction')
+    for x, y in sorted(normalized.items(), key=lambda z: z[0]):
+        print(f'{x:>6}   {y:.15f}')

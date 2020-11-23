@@ -83,15 +83,9 @@ def save(data: list[dict[str, Any]], *, to: Union[str, Path]):
 
 
 if __name__ == '__main__':
-    from datetime import datetime
+    from pfe.misc.log import timestamped
 
-    verbose = True
-
-    if verbose:
-        log = lambda *args, **kwargs: print(f'[{datetime.now()}]', *args, **kwargs)
-    else:
-        log = lambda *args, **kwargs: ...
-
+    log = timestamped
     log('Starting...')
 
     # We assume that data is stored in a directory
