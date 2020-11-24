@@ -6,6 +6,7 @@ the number of communities per publication.
 import matplotlib.pyplot as plt
 
 from pfe.misc.log import timestamped
+from pfe.misc.plot import Plot
 from pfe.parse import parse, publications_from
 from pfe.tasks.statistics import communities_per_publication
 
@@ -20,7 +21,7 @@ if __name__ == '__main__':
              for year in range(years[0], years[1] + 1)]
 
     # Load publications and construct a graph.
-    publications = publications_from(files, skip_100=True, log=log)
+    publications = publications_from(files, log=log)
     graph = parse(publications)
 
     log('Constructed a graph.')
@@ -31,27 +32,12 @@ if __name__ == '__main__':
     log('Computed the statistic.')
 
     # Plot the statistic.
-    x = statistic.keys()
-    y = statistic.values()
+    plot = Plot(tex=True)
+    plot.scatter(statistic)
 
-    styles = [
-        crosses := dict(s=25, color='black', marker='x'),
-        circles := dict(s=25, facecolors='none', edgecolors='black'),
-    ]
+    plot.x.label('Number of Communities')
 
-    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern Roman']})
-    plt.rc('text', usetex=True)
+    plot.y.scale('log')
+    plot.y.label('Number of Publications')
 
-    plt.figure()
-
-    ax = plt.gca()
-    ax.set_axisbelow(True)
-    ax.grid(linestyle='--')
-    ax.scatter(x, y, **circles)
-
-    ax.set_yscale('log')
-
-    plt.savefig(f'{domain}-{years[0]}-{years[1]}-cpp.eps')
-    plt.show()
-
-    log('Finished.')
+    plot.save('some-3.eps')

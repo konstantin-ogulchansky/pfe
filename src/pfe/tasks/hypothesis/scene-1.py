@@ -2,9 +2,8 @@
 ...
 """
 
-import matplotlib.pyplot as plt
-
 from pfe.misc.log import timestamped
+from pfe.misc.plot import Plot
 from pfe.parse import publications_from, parse
 from pfe.tasks.hypothesis import degree_distribution
 
@@ -19,7 +18,7 @@ if __name__ == '__main__':
              for year in range(years[0], years[1] + 1)]
 
     # Construct a graph.
-    graph = parse(publications_from(files, skip_100=True, log=log))
+    graph = parse(publications_from(files, log=log))
 
     log(f'Read a graph with '
         f'{graph.number_of_nodes()} nodes and '
@@ -30,26 +29,15 @@ if __name__ == '__main__':
     original_normalized = original.normalized()
 
     # Plot the data.
-    styles = [
-        crosses := dict(s=25, color='black', marker='x'),
-        circles := dict(s=25, facecolors='none', edgecolors='black'),
-    ]
+    plot = Plot(tex=True)
+    plot.scatter(original)
 
-    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern Roman']})
-    plt.rc('text', usetex=True)
+    plot.x.scale('log')
+    plot.x.limit(10 ** -1, 10 ** 4)
+    plot.x.label('x')
 
-    fig, ax = plt.subplots()
+    plot.y.scale('log')
+    plot.y.limit(10 ** -1, 10 ** 5)
+    plot.y.label('y')
 
-    ax.grid(linestyle='--')
-    ax.set_axisbelow(True)
-
-    ax.scatter(original.keys(), original.values(), **circles)
-
-    ax.set_xscale('log')
-    ax.set_yscale('log')
-
-    ax.set_xlim(10 ** -1, 10 ** 4)
-    ax.set_ylim(10 ** -1, 10 ** 5)
-
-    plt.savefig('some-1.eps')
-    plt.show()
+    plot.save('some-1.eps')

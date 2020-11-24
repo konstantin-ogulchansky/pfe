@@ -2,10 +2,10 @@
 ...
 """
 
-import matplotlib.pyplot as plt
 import powerlaw as pl
 
 from pfe.misc.log import timestamped
+from pfe.misc.plot import Plot, red, blue
 from pfe.parse import publications_from, parse
 from pfe.tasks.hypothesis import degree_distribution
 
@@ -49,30 +49,13 @@ if __name__ == '__main__':
     truncated_normalized = truncated.normalized()
 
     # Plot the data.
-    colors = [
-        red  := '#ff3f3f',
-        blue := '#3f3fff',
-    ]
-
-    styles = [
-        crosses := dict(s=25, color='black', marker='x'),
-        circles := dict(s=25, facecolors='none', edgecolors='black'),
-    ]
-
-    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern Roman']})
-    plt.rc('text', usetex=True)
-
-    fig, ax = plt.subplots()
-
-    ax.grid(linestyle='--')
-    ax.set_axisbelow(True)
-
-    ax.scatter(truncated_normalized.keys(), truncated_normalized.values(), **circles)
+    plot = Plot(tex=True)
+    plot.scatter(truncated_normalized)
 
     # The empirical distribution.
-    fit.plot_pdf(ax=ax, color=red, linestyle='--')
+    fit.plot_pdf(ax=plot.ax, color=red, linestyle='--', label='Empirical PDF')
     # The theoretical distribution.
-    fit.power_law.plot_pdf(ax=ax, color=blue, linestyle='-.')
+    fit.power_law.plot_pdf(ax=plot.ax, color=blue, linestyle='-.', label='Power-Law PDF')
 
-    plt.savefig('some-3.eps')
-    plt.show()
+    plot.legend()
+    plot.save('some-3.eps')

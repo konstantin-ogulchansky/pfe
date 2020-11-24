@@ -1,7 +1,5 @@
 """
 Contains functions for constructing graphs from JSON files.
-
-TODO: Generalize `parse.py` and remove this file.
 """
 
 import json
@@ -14,7 +12,7 @@ from pfe.misc.log import nothing
 
 
 def publications_from(paths: Union[str, list[str]],
-                      skip_100: bool = False,
+                      skip_100: bool = True,
                       log: Optional[Callable] = nothing) -> list[dict]:
     """TODO."""
 

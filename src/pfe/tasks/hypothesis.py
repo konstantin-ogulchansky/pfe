@@ -50,7 +50,7 @@ def degree_distribution(graph: nx.Graph) -> Statistic:
 
 
 if __name__ == '__main__':
-    from pfe.parse_cleaned_data import parse, publications_from
+    from pfe.parse import parse, publications_from
     from pfe.misc.log import timestamped
 
     log = timestamped

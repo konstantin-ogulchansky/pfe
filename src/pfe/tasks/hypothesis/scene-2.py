@@ -2,11 +2,11 @@
 ...
 """
 
-import matplotlib.pyplot as plt
 import powerlaw as pl
 
 from pfe.misc.collections import truncate
 from pfe.misc.log import timestamped
+from pfe.misc.plot import Plot, red, crosses, circles
 from pfe.parse import publications_from, parse
 from pfe.tasks.hypothesis import degree_distribution
 
@@ -16,12 +16,12 @@ if __name__ == '__main__':
     log('Starting...')
 
     domain = 'COMP'
-    years = (1990, 2018)
+    years = (1990, 1990)
     files = [f'../../../../data/clean/{domain}/{domain}-{year}.json'
              for year in range(years[0], years[1] + 1)]
 
     # Construct a graph.
-    graph = parse(publications_from(files, skip_100=True, log=log))
+    graph = parse(publications_from(files, log=log))
 
     log(f'Read a graph with '
         f'{graph.number_of_nodes()} nodes and '
@@ -45,45 +45,29 @@ if __name__ == '__main__':
         f'    x: {(x_min, x_max)}')
 
     # Plot the data.
-    colors = [
-        red  := '#ff3f3f',
-        blue := '#3f3fff',
-    ]
-
-    styles = [
-        crosses := dict(s=25, color='black', marker='x'),
-        circles := dict(s=25, facecolors='none', edgecolors='black'),
-    ]
-
     included = truncate(original_normalized, x_min, x_max)
     excluded = {x: y for x, y in original_normalized.items() if x not in included}
 
-    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern Roman']})
-    plt.rc('text', usetex=True)
+    plot = Plot(tex=True)
 
-    fig, ax = plt.subplots()
+    plot.x.scale('log')
+    plot.x.limit(10 ** -1, 10 ** 4)
+    plot.x.label('Degree $k$')
 
-    ax.grid(linestyle='--')
-    ax.set_axisbelow(True)
+    plot.y.scale('log')
+    plot.y.limit(10 ** -6, 10 ** 0)
+    plot.y.label('$P(k)$')
 
-    ax.scatter(excluded.keys(), excluded.values(), **crosses)
-    ax.scatter(included.keys(), included.values(), **circles)
-
-    ax.set_xlim(10 ** -1, 10 ** 4)
-    ax.set_ylim(10 ** -6, 10 ** 0)
-
-    # Add vertical lines for `x_min` and `x_max`.
-    def vertical_line(x, label, ax):
-        ax.axvline(x=x, linestyle='dashed', color='black', linewidth=0.75)
-        ax.text(x + 10, 0.005, fr'$x_{{{label}}} = {x}$', rotation=90)
+    plot.scatter(excluded, crosses, label='Excluded Points')
+    plot.scatter(included, circles, label='Included Points')
 
     if x_min is not None:
-        vertical_line(x=x_min, label='min', ax=ax)
+        plot.x.line(x_min, label=f'$x_{{min}} = {x_min}$')
     if x_max is not None:
-        vertical_line(x=x_max, label='max', ax=ax)
+        plot.x.line(x_max, label=f'$x_{{max}} = {x_max}$')
 
     # The empirical distribution.
-    fit.plot_pdf(ax=ax, original_data=True, color=red, linestyle='--')
+    fit.plot_pdf(ax=plot.ax, original_data=True, color=red, linestyle='--', label='Empirical PDF')
 
-    plt.savefig('some-2.eps')
-    plt.show()
+    plot.legend()
+    plot.save('some-2.eps')

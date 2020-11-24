@@ -5,6 +5,7 @@ the number of authors per publication.
 
 import matplotlib.pyplot as plt
 
+from pfe.misc.plot import Plot
 from pfe.parse import publications_from
 from pfe.tasks.statistics import authors_per_publication
 from pfe.misc.log import timestamped
@@ -20,7 +21,7 @@ if __name__ == '__main__':
              for year in range(years[0], years[1] + 1)]
 
     # Load publications.
-    publications = publications_from(files, skip_100=True, log=log)
+    publications = publications_from(files, log=log)
 
     # Calculate the statistic.
     statistic = authors_per_publication(publications)
@@ -33,31 +34,15 @@ if __name__ == '__main__':
     print()
 
     # Plot the statistic.
-    x = statistic.keys()
-    y = statistic.values()
+    plot = Plot(tex=True)
+    plot.scatter(statistic)
 
-    styles = [
-        crosses := dict(s=25, color='black', marker='x'),
-        circles := dict(s=25, facecolors='none', edgecolors='black'),
-    ]
+    plot.x.scale('log')
+    plot.x.limit(10 ** -1, 10 ** 4)
+    plot.x.label('Number of Authors')
 
-    plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern Roman']})
-    plt.rc('text', usetex=True)
+    plot.y.scale('log')
+    plot.y.limit(10 ** -1, 10 ** 5)
+    plot.y.label('Number of Publications')
 
-    plt.figure()
-
-    ax = plt.gca()
-    ax.set_axisbelow(True)
-    ax.grid(linestyle='--')
-    ax.scatter(x, y, **circles)
-
-    ax.set_xscale('log')
-    ax.set_yscale('log')
-
-    ax.set_xlim(10 ** -1, 10 ** 4)
-    ax.set_ylim(10 ** -1, 10 ** 5)
-
-    plt.savefig(f'{domain}-{years[0]}-{years[1]}-app.eps')
-    plt.show()
-
-    log('Finished.')
+    plot.save('some-2.eps')
