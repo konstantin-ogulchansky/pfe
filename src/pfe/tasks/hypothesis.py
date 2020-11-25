@@ -28,10 +28,11 @@ import powerlaw as pl
 from pfe.tasks.statistics import Statistic
 
 
-def degree_distribution(graph: nx.Graph) -> Statistic:
+def degree_distribution(graph: nx.Graph, weighted: bool = False) -> Statistic:
     """Computes the degree distribution distribution.
 
     :param graph: a `networkx.Graph`.
+    :param weighted: whether the degree distribution should be weighted.
 
     :returns: a dictionary representing the distribution,
               where key is a degree and a value is the number
@@ -41,7 +42,12 @@ def degree_distribution(graph: nx.Graph) -> Statistic:
     distribution = {}
 
     for node in graph.nodes:
-        degree = graph.degree[node]
+        if weighted:
+            degrees = graph.degree(weight='weight')
+        else:
+            degrees = graph.degree()
+
+        degree = degrees[node]
 
         distribution.setdefault(degree, 0)
         distribution[degree] += 1
