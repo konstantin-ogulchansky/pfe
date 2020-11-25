@@ -119,16 +119,9 @@ def parse(publications: list[dict],
         # Skip publications without authors.
         if 'authors' not in publication:
             return False
+
         # Skip publications without affiliation.
         if all(author['affiliation_id'] is None for author in publication['authors']):
-            return False
-
-        authors = publication['authors']
-
-        # Skip publications without at least two authors.
-        if not isinstance(authors, list):
-            return False
-        if len(authors) <= 1:
             return False
 
         # Skip publications that do not match a predicate.
@@ -144,18 +137,17 @@ def parse(publications: list[dict],
             continue
 
         authors = publication['authors']
+        authors = authors if isinstance(authors, list) else [authors]
         authors = unique(authors, lambda x: x['id'])
-
-        # Do not consider publications with a single unique author.
-        if len(authors) <= 1:
-            continue
 
         # Add nodes.
         for author in authors:
             u = int(author['id'])
 
             if not graph.has_node(u):
-                graph.add_node(u, name=author['name'])
+                graph.add_node(u, name=author['name'], weight=1)
+            else:
+                graph.nodes[u]['weight'] += 1
 
         # Add edges.
         for i in range(len(authors)):
@@ -166,7 +158,7 @@ def parse(publications: list[dict],
                 if not graph.has_edge(u, v):
                     graph.add_edge(u, v, weight=1)
                 else:
-                    graph[u][v]['weight'] += 1
+                    graph.edges[u, v]['weight'] += 1
 
     return graph
 
