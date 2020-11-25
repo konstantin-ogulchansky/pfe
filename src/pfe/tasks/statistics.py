@@ -178,16 +178,11 @@ def partition_of_authors(graph: nx.Graph, publications: Any, partition_size: int
 
 
 if __name__ == '__main__':
-    from pfe.parse_cleaned_data import publications_from
+    from pfe.parse import publications_in
     from pfe.misc.log import timestamped
 
-    domain = 'COMP'
-    years = (1990, 1996)
-    files = [f'../../../data/{domain}/{domain}-{year}.json'
-             for year in range(years[0], years[1] + 1)]
-
     # Construct a graph.
-    publications = publications_from(files, log=timestamped)
+    publications = publications_in('COMP', between=(1990, 2018), log=timestamped)
 
     # Calculate a statistic.
     statistic = publications_per_author(publications)

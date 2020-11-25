@@ -3,25 +3,18 @@ Calculating and plotting the distribution of
 the number of authors per publication.
 """
 
-import matplotlib.pyplot as plt
-
-from pfe.misc.plot import Plot
-from pfe.parse import publications_from
-from pfe.tasks.statistics import authors_per_publication
 from pfe.misc.log import timestamped
+from pfe.misc.plot import Plot
+from pfe.parse import publications_in
+from pfe.tasks.statistics import authors_per_publication
 
 
 if __name__ == '__main__':
     log = timestamped
     log('Starting.')
 
-    domain = 'COMP'
-    years = (1990, 2018)
-    files = [f'../../../../data/clean/{domain}/{domain}-{year}.json'
-             for year in range(years[0], years[1] + 1)]
-
     # Load publications.
-    publications = publications_from(files, log=log)
+    publications = publications_in('COMP', between=(1990, 2018), log=log)
 
     # Calculate the statistic.
     statistic = authors_per_publication(publications)

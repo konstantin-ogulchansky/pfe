@@ -3,7 +3,8 @@ Contains functions for constructing graphs from JSON files.
 """
 
 import json
-from typing import Optional, Callable, Union
+from pathlib import Path
+from typing import Optional, Callable, Union, Tuple
 
 import networkx as nx
 
@@ -11,12 +12,75 @@ from pfe.misc.collections import unique
 from pfe.misc.log import nothing
 
 
-def publications_from(paths: Union[str, list[str]],
-                      skip_100: bool = True,
-                      log: Optional[Callable] = nothing) -> list[dict]:
-    """TODO."""
+def publications_in(*domains: str, between: Tuple[int, int], **kwargs) -> list[dict]:
+    """Returns a list of publications related to the specified domains
+    between the specified years.
 
-    if isinstance(paths, str):
+    In order to find files with corresponding publications, the function
+    moves up the current working directory until the root of the repository
+    (the directory with `.gitignore`) is found. Then, we assume that
+    the repository has the following structure.
+    ::
+
+        repo/
+        |- data/
+           |- clean/
+              |- {domain-1}/
+                 |- {domain-1}-{year}.json
+                 ...
+              |- {domain-2}/
+                 ...
+        |- src/
+           ...
+        |- .gitignore
+        ...
+
+    where {domain-i} is a domain from the provided `domains` and
+    {year} is a year in the range as specified by `between`.
+
+    :param domains: a sequence of domain codes ('COMP', 'MATH', 'PHYS', etc.).
+    :param between: a tuple of two integers that specifies the (inclusive) range
+
+    :param kwargs: `**kwargs` to pass to `publications_from`.
+
+    :returns: a list of publications.
+    """
+
+    directory = Path.cwd()
+
+    # Find the root of the repository.
+    while all(x.name != '.gitignore' for x in directory.iterdir()):
+        directory = directory.parent
+
+    files = [directory / 'data' / 'clean' / domain / f'{domain}-{year}.json'
+             for domain in domains
+             for year in range(between[0], between[1] + 1)]
+
+    return publications_from(files, **kwargs)
+
+
+def publications_from(paths: Union[str, list[str]],
+                      log: Optional[Callable] = nothing,
+                      skip_100: bool = True) -> list[dict]:
+    """Returns a list of publications from files specified
+    by the provided `paths`.
+
+    :param paths: either a single path or a list of paths
+                  to files to read publications from.
+    :param log: a function to log steps of the execution with.
+    :param skip_100: a flag to consider only publications that have less than
+                     100 authors, because it seems that if a publication has
+                     100 and more authors, then only 100 of its authors will
+                     be present in the list (we, however, assumed that the
+                     dataset would not contain such publications at all);
+                     thus, the resulting distribution of the number of authors
+                     seems to be distorted since there are much more
+                     publications with 100 authors than there should have been.
+
+    :returns: a list of publications.
+    """
+
+    if isinstance(paths, (str, Path)):
         paths = [paths]
 
     publications = []
@@ -27,13 +91,7 @@ def publications_from(paths: Union[str, list[str]],
         with open(path, 'r') as file:
             data = json.load(file)
 
-        # We consider only publications that have less than 100 authors,
-        # because it seems that if a publication has 100 and more authors,
-        # then only 100 of its authors will be present in the list
-        # (we, however, assumed that the dataset would not contain such
-        # publications at all). Thus, the resulting distribution seems
-        # to be distorted since there are much more publications with
-        # 100 authors than there should have been.
+        # Refer to the documentation to see why this flag has been introduced.
         if skip_100:
             publications += (x for x in data if len(x['authors']) < 100)
         else:
@@ -114,12 +172,7 @@ def parse(publications: list[dict],
 if __name__ == '__main__':
     from pfe.misc.log import timestamped
 
-    domain = 'COMP'
-    years = (1990, 2018)
-    files = [f'../../data/clean/{domain}/{domain}-{year}.json'
-             for year in range(years[0], years[1] + 1)]
-
-    graph = parse(publications_from(files, log=timestamped))
+    graph = parse(publications_in('COMP', between=(1990, 2018), log=timestamped))
 
     print()
     print('Unique names:', len({node['name'] for _, node in graph.nodes(data=True)}))

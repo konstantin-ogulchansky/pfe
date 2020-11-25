@@ -4,7 +4,7 @@
 
 from pfe.misc.log import timestamped
 from pfe.misc.plot import Plot
-from pfe.parse import publications_from, parse
+from pfe.parse import parse, publications_in
 from pfe.tasks.hypothesis import degree_distribution
 
 
@@ -12,13 +12,8 @@ if __name__ == '__main__':
     log = timestamped
     log('Starting...')
 
-    domain = 'COMP'
-    years = (1990, 2018)
-    files = [f'../../../../data/clean/{domain}/{domain}-{year}.json'
-             for year in range(years[0], years[1] + 1)]
-
     # Construct a graph.
-    graph = parse(publications_from(files, log=log))
+    graph = parse(publications_in('COMP', between=(1990, 2018), log=log))
 
     log(f'Read a graph with '
         f'{graph.number_of_nodes()} nodes and '
