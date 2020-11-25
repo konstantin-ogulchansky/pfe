@@ -4,7 +4,7 @@ Contains functions for constructing graphs from JSON files.
 
 import json
 from pathlib import Path
-from typing import Optional, Callable, Union, Tuple
+from typing import Optional, Callable, Union, Tuple, Any
 
 import networkx as nx
 
@@ -12,7 +12,9 @@ from pfe.misc.collections import unique
 from pfe.misc.log import nothing
 
 
-def publications_in(*domains: str, between: Tuple[int, int], **kwargs) -> list[dict]:
+def publications_in(*domains: str,
+                    between: Tuple[int, int],
+                    **kwargs: Any) -> list[dict]:
     """Returns a list of publications related to the specified domains
     between the specified years.
 
@@ -91,7 +93,7 @@ def publications_from(paths: Union[str, list[str]],
         with open(path, 'r') as file:
             data = json.load(file)
 
-        # Refer to the documentation to see why this flag has been introduced.
+        # Refer to the documentation to see why this flag was introduced.
         if skip_100:
             publications += (x for x in data if len(x['authors']) < 100)
         else:
