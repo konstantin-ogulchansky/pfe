@@ -23,12 +23,12 @@ if __name__ == '__main__':
     plot = Plot(tex=True)
     plot.scatter(statistic)
 
+    plot.x.label('Number of Publications')
     plot.x.scale('log')
     plot.x.limit(10 ** -1, 10 ** 4)
-    plot.x.label('Number of Publications')
 
+    plot.y.label('Number of Authors')
     plot.y.scale('log')
     plot.y.limit(10 ** -1, 10 ** 6)
-    plot.y.label('Number of Authors')
 
     plot.save('some-1.eps')

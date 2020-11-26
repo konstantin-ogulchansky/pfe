@@ -46,13 +46,13 @@ if __name__ == '__main__':
 
     plot = Plot(tex=True)
 
+    plot.x.label('Degree $k$')
     plot.x.scale('log')
     plot.x.limit(10 ** -1, 10 ** 4)
-    plot.x.label('Degree $k$')
 
+    plot.y.label('$P(k)$')
     plot.y.scale('log')
     plot.y.limit(10 ** -6, 10 ** 0)
-    plot.y.label('$P(k)$')
 
     plot.scatter(excluded, crosses, label='Excluded Points')
     plot.scatter(included, circles, label='Included Points')

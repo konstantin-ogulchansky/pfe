@@ -26,12 +26,12 @@ if __name__ == '__main__':
     plot = Plot(tex=True)
     plot.scatter(statistic)
 
+    plot.x.label('Weighted Degree $k$')
     plot.x.scale('log')
     plot.x.limit(10 ** -1, 10 ** 4)
-    plot.x.label('Weighted Degree $k$')
 
+    plot.y.label('$P_w(k)$')
     plot.y.scale('log')
     plot.y.limit(10 ** -1, 10 ** 5)
-    plot.y.label('$P_w(k)$')
 
     plot.save('some-2.eps')

@@ -69,12 +69,12 @@ if __name__ == '__main__':
         f'{graph.number_of_nodes()} nodes and '
         f'{graph.number_of_edges()} edges.')
 
-    # Compute the "original" (not truncated) degree distribution.
-    original = degree_distribution(graph)
-    original_normalized = original.normalized()
+    # Compute the degree distribution.
+    statistic = degree_distribution(graph)
+    statistic_normalized = statistic.normalized()
 
     # Fit the hypothesis.
-    fit = pl.Fit(list(original.sequence()), discrete=True)
+    fit = pl.Fit(list(statistic.sequence()), discrete=True)
 
     # Compare distributions.
     distributions = fit.supported_distributions.keys()

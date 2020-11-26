@@ -77,6 +77,19 @@ class Plot:
 
         self.ax.scatter(x, y, **(style or circles), label=label)
 
+    def draw(self, dictionary, style=None, label=None):
+        """..."""
+
+        if style is None:
+            style = {'color': 'black', 'linewidth': 0.75}
+
+        items = list(sorted(dictionary.items()))
+
+        x = [x for x, _ in items]
+        y = [y for _, y in items]
+
+        self.ax.plot(x, y, **style, label=label)
+
     def legend(self, title=None):
         """..."""
 

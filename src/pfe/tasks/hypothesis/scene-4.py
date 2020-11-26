@@ -48,11 +48,11 @@ if __name__ == '__main__':
     plot = Plot(tex=True)
     plot.scatter(truncated_normalized)
 
-    plot.x.scale('log')
     plot.x.label('Degree $k$')
+    plot.x.scale('log')
 
-    plot.y.scale('log')
     plot.y.label('$P(k)$')
+    plot.y.scale('log')
 
     # The empirical distribution.
     fit.plot_pdf(ax=plot.ax, color=red, linestyle='--', label='Empirical PDF')

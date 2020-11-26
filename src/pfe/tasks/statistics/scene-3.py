@@ -27,10 +27,11 @@ if __name__ == '__main__':
     # Plot the statistic.
     plot = Plot(tex=True)
     plot.scatter(statistic)
+    plot.draw(statistic)
 
     plot.x.label('Number of Communities')
 
-    plot.y.scale('log')
     plot.y.label('Number of Publications')
+    plot.y.scale('log')
 
     plot.save('some-3.eps')
