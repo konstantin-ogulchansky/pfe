@@ -24,7 +24,7 @@ if __name__ == '__main__':
 
     # Plot the data.
     plot = Plot(tex=True)
-    plot.scatter(statistic)
+    plot.scatter(statistic.normalized())
 
     plot.x.label('Weighted Degree $k$')
     plot.x.scale('log')
@@ -32,6 +32,6 @@ if __name__ == '__main__':
 
     plot.y.label('$P_w(k)$')
     plot.y.scale('log')
-    plot.y.limit(10 ** -1, 10 ** 5)
+    plot.y.limit(10 ** -6, 10 ** 0)
 
     plot.save('some-2.eps')
