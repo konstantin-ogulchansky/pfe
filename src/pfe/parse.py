@@ -3,6 +3,7 @@ Contains functions for constructing graphs from JSON files.
 """
 
 import json
+from decimal import Decimal
 from pathlib import Path
 from typing import Optional, Callable, Union, Tuple, Any
 
@@ -62,14 +63,14 @@ def publications_in(*domains: str,
 
 
 def publications_from(paths: Union[str, list[str]],
-                      log: Optional[Callable] = nothing,
-                      skip_100: bool = True) -> list[dict]:
+                      skip_100: bool = True,
+                      where: Optional[Callable] = None,
+                      log: Callable = nothing) -> list[dict]:
     """Returns a list of publications from files specified
     by the provided `paths`.
 
     :param paths: either a single path or a list of paths
                   to files to read publications from.
-    :param log: a function to log steps of the execution with.
     :param skip_100: a flag to consider only publications that have less than
                      100 authors, because it seems that if a publication has
                      100 and more authors, then only 100 of its authors will
@@ -78,6 +79,8 @@ def publications_from(paths: Union[str, list[str]],
                      thus, the resulting distribution of the number of authors
                      seems to be distorted since there are much more
                      publications with 100 authors than there should have been.
+    :param where: a predicate to filter parsed publications.
+    :param log: a function to log steps of the execution with.
 
     :returns: a list of publications.
     """
@@ -87,41 +90,10 @@ def publications_from(paths: Union[str, list[str]],
 
     publications = []
 
-    for path in paths:
-        log(f'Processing `{path}`...')
-
-        with open(path, 'r') as file:
-            data = json.load(file)
-
-        # Refer to the documentation to see why this flag was introduced.
-        if skip_100:
-            publications += (x for x in data if len(x['authors']) < 100)
-        else:
-            publications += data
-
-    return publications
-
-
-def parse(publications: list[dict],
-          where: Optional[Callable[[dict], bool]] = None,
-          into: Optional[nx.Graph] = None) -> nx.Graph:
-    """Parses a collaboration network from JSON files and
-    constructs a social collaboration graph.
-
-    :param publications: publications represented as dictionaries with JSON.
-    :param where: a predicate to filter parsed publications.
-    :param into: a graph to add parsed nodes and edges into (optional).
-
-    :returns: a constructed social collaboration graph.
-    """
-
     def appropriate(publication: dict) -> bool:
-        # Skip publications without authors.
-        if 'authors' not in publication:
-            return False
-
-        # Skip publications without affiliation.
-        if all(author['affiliation_id'] is None for author in publication['authors']):
+        # Skip publications that have 100 authors or more.
+        # Refer to the documentation to see why this flag was introduced.
+        if skip_100 and len(publication['authors']) >= 100:
             return False
 
         # Skip publications that do not match a predicate.
@@ -130,12 +102,30 @@ def parse(publications: list[dict],
 
         return True
 
+    for path in paths:
+        log(f'Processing `{path}`...')
+
+        with open(path, 'r') as file:
+            data = json.load(file)
+
+        publications += (x for x in data if appropriate(x))
+
+    return publications
+
+
+def parse(publications: list[dict], into: Optional[nx.Graph] = None) -> nx.Graph:
+    """Parses a collaboration network from JSON files and
+    constructs a social collaboration graph.
+
+    :param publications: publications represented as dictionaries with JSON.
+    :param into: a graph to add parsed nodes and edges into (optional).
+
+    :returns: a constructed social collaboration graph.
+    """
+
     graph = into or nx.Graph()
 
     for publication in publications:
-        if not appropriate(publication):
-            continue
-
         authors = publication['authors']
         authors = authors if isinstance(authors, list) else [authors]
         authors = unique(authors, lambda x: x['id'])
@@ -145,20 +135,30 @@ def parse(publications: list[dict],
             u = int(author['id'])
 
             if not graph.has_node(u):
-                graph.add_node(u, name=author['name'], weight=1)
-            else:
-                graph.nodes[u]['weight'] += 1
+                graph.add_node(u, name=author['name'], weight=0)
+
+            graph.nodes[u]['weight'] += 1
 
         # Add edges.
-        for i in range(len(authors)):
-            for j in range(i + 1, len(authors)):
-                u = int(authors[i]['id'])
+        n = len(authors)
+
+        for i in range(n):
+            u = int(authors[i]['id'])
+
+            if not graph.has_edge(u, u):
+                graph.add_edge(u, u, weight=0)
+
+            # We need to add `1 / (n * 2)` because self-loops are
+            # counted twice in a degree.
+            graph.edges[u, u]['weight'] += Decimal(1) / Decimal(n * 2)
+
+            for j in range(i + 1, n):
                 v = int(authors[j]['id'])
 
                 if not graph.has_edge(u, v):
-                    graph.add_edge(u, v, weight=1)
-                else:
-                    graph.edges[u, v]['weight'] += 1
+                    graph.add_edge(u, v, weight=0)
+
+                graph.edges[u, v]['weight'] += Decimal(1) / Decimal(n)
 
     return graph
 

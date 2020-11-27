@@ -23,7 +23,7 @@ if __name__ == '__main__':
     statistic = degree_distribution(graph)
 
     # Plot the data.
-    plot = Plot(tex=True)
+    plot = Plot(tex=True, log=log)
     plot.scatter(statistic.normalized())
 
     plot.x.label('Degree $k$')

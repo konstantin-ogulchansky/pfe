@@ -20,6 +20,7 @@ TODO:
   - Check binned data?
 """
 
+from decimal import Decimal
 from itertools import combinations
 
 import networkx as nx
@@ -44,10 +45,11 @@ def degree_distribution(graph: nx.Graph, weighted: bool = False) -> Statistic:
     for node in graph.nodes:
         if weighted:
             degrees = graph.degree(weight='weight')
-        else:
-            degrees = graph.degree()
 
-        degree = degrees[node]
+            degree = degrees[node]
+            degree = int(degree.quantize(Decimal('1')))
+        else:
+            degree = graph.degree[node]
 
         distribution.setdefault(degree, 0)
         distribution[degree] += 1

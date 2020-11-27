@@ -4,6 +4,8 @@
 
 import matplotlib.pyplot as plt
 
+from pfe.misc.log import nothing
+
 
 class XAxis:
     """..."""
@@ -48,7 +50,7 @@ class YAxis:
 class Plot:
     """..."""
 
-    def __init__(self, ax=None, tex=False):
+    def __init__(self, ax=None, tex=False, log=nothing):
         # Must be before `plt.gca()`.
         if tex:
             plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern Roman']})
@@ -58,6 +60,8 @@ class Plot:
 
         self.ax.set_axisbelow(True)
         self.ax.grid(linestyle='--')
+
+        self.log = log
 
     @property
     def x(self):
@@ -98,16 +102,19 @@ class Plot:
         frame = legend.get_frame()
         frame.set_linewidth(0.5)
 
-    @staticmethod
-    def show():
+    def show(self):
         """..."""
+
+        self.log('Showing the figure...')
         plt.show()
 
-    @staticmethod
-    def save(name):
+    def save(self, name):
         """..."""
 
+        self.log('Saving the figure...')
         plt.savefig(name)
+
+        self.log('Showing the figure...')
         plt.show()
 
 
