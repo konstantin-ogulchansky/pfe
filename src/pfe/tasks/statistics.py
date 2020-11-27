@@ -16,11 +16,10 @@ class Statistic:
     :param p: a dictionary representing a discrete distribution.
     """
 
-    __slots__ = ('_p', '_n')
+    __slots__ = ('_p', )
 
     def __init__(self, p: dict[int, int]):
         self._p = p
-        self._n = sum(p.values())
 
     def __iter__(self) -> Iterator[int]:
         """Returns an iterator over keys of the distribution."""
@@ -28,7 +27,7 @@ class Statistic:
 
     def __getitem__(self, item: int) -> int:
         """Returns a value of the corresponding key of the distribution."""
-        return self._p[item]
+        return self._p.get(item, 0)
 
     def keys(self) -> Iterable[int]:
         """Returns keys of the distribution."""
@@ -41,6 +40,10 @@ class Statistic:
     def items(self) -> Iterable[Tuple[int, int]]:
         """Returns values of the distribution."""
         return self._p.items()
+
+    def pop(self, key) -> int:
+        """Removes a value by the specified key."""
+        return self._p.pop(key)
 
     def truncate(self,
                  min: Optional[float] = None,
@@ -57,7 +60,10 @@ class Statistic:
 
     def normalized(self) -> dict[int, float]:
         """Returns a normalized distribution."""
-        return {k: n / self._n for k, n in self._p.items()}
+
+        total = sum(self._p.values())
+
+        return {k: n / total for k, n in self._p.items()}
 
     def min(self) -> int:
         """Returns the minimum degree."""
@@ -69,7 +75,10 @@ class Statistic:
 
     def mean(self) -> float:
         """Returns the mean value."""
-        return sum(k * n for k, n in self._p.items()) / self._n
+
+        total = sum(self._p.values())
+
+        return sum(k * n for k, n in self._p.items()) / total
 
 
 def publications_per_author(publications: list[dict]) -> Statistic:

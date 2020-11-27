@@ -6,7 +6,7 @@ import powerlaw as pl
 
 from pfe.misc.collections import truncate
 from pfe.misc.log import timestamped
-from pfe.misc.plot import Plot, red, blue, crosses, circles
+from pfe.misc.plot import Plot, red, blue, crosses, circles, green
 from pfe.parse import parse, publications_in
 from pfe.tasks.hypothesis import degree_distribution
 
@@ -84,8 +84,10 @@ if __name__ == '__main__':
 
     # The empirical distribution.
     fit.plot_pdf(ax=plot.ax, color=red, linestyle='--', label='Empirical PDF')
-    # The theoretical distribution.
+    # The theoretical distributions.
     fit.power_law.plot_pdf(ax=plot.ax, color=blue, linestyle='-.', label='Power-Law PDF')
+    # The theoretical distributions. [2]
+    fit.truncated_power_law.plot_pdf(ax=plot.ax, color=green, linestyle=':', label='Trunc. Power-Law PDF')
 
     plot.legend()
     plot.save('some-3-b.eps')

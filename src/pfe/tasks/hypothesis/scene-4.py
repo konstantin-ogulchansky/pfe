@@ -45,11 +45,11 @@ if __name__ == '__main__':
 
     plot = Plot(tex=True)
 
-    plot.x.label('Degree $k$')
+    plot.x.label('Weighted Degree $k$')
     plot.x.scale('log')
     plot.x.limit(10 ** -1, 10 ** 4)
 
-    plot.y.label('$P(k)$')
+    plot.y.label('$P_w(k)$')
     plot.y.scale('log')
     plot.y.limit(10 ** -6, 10 ** 0)
 
@@ -63,6 +63,10 @@ if __name__ == '__main__':
 
     # The empirical distribution.
     fit.plot_pdf(ax=plot.ax, original_data=True, color=red, linestyle='--', label='Empirical PDF')
+    # The theoretical power-law distribution.
+    fit.power_law.plot_pdf(ax=plot.ax, color=blue, linestyle='-.', label='Power-Law PDF')
+    # The theoretical distributions. [2]
+    fit.truncated_power_law.plot_pdf(ax=plot.ax, color=green, linestyle=':', label='Trunc. Power-Law PDF')
 
     plot.legend()
     plot.save('some-4-a.eps')
@@ -76,18 +80,18 @@ if __name__ == '__main__':
     plot = Plot(tex=True)
     plot.scatter(truncated_normalized)
 
-    plot.x.label('Degree $k$')
+    plot.x.label('Weighted Degree $k$')
     plot.x.scale('log')
 
-    plot.y.label('$P(k)$')
+    plot.y.label('$P_w(k)$')
     plot.y.scale('log')
 
     # The empirical distribution.
     fit.plot_pdf(ax=plot.ax, color=red, linestyle='--', label='Empirical PDF')
     # The theoretical power-law distribution.
     fit.power_law.plot_pdf(ax=plot.ax, color=blue, linestyle='-.', label='Power-Law PDF')
-    # The theoretical exponential distribution.
-    fit.lognormal.plot_pdf(ax=plot.ax, color=green, linestyle='-.', label='Exp. PDF')
+    # The theoretical distributions. [2]
+    fit.truncated_power_law.plot_pdf(ax=plot.ax, color=green, linestyle=':', label='Trunc. Power-Law PDF')
 
     plot.legend()
     plot.save('some-4-b.eps')
