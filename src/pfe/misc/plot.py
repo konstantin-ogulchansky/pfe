@@ -119,8 +119,9 @@ class Plot:
 
 
 colors = [
-    red := '#ff3f3f',
-    blue := '#3f3fff',
+    red   := '#ff3f3f',
+    blue  := '#3f3fff',
+    green := '#3fff3f',
 ]
 
 styles = [
