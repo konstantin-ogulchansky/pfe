@@ -1,5 +1,5 @@
 """
-Fit a power-law distribution into the weighted degree distribution.
+Plot the complementary cumulative distribution function.
 """
 
 from itertools import combinations
@@ -11,13 +11,6 @@ from pfe.misc.log import timestamped
 from pfe.misc.plot import Plot, red, blue, green
 from pfe.parse import parse, publications_in
 from pfe.tasks.hypothesis import degree_distribution
-
-
-def ccdf(statistic):
-    """Computes the complementary cumulative distribution function."""
-    return {k: sum(statistic.get(l, 0)
-                   for l in range(k + 1, max(statistic.keys()) + 1))
-            for k in statistic.keys()}
 
 
 if __name__ == '__main__':
@@ -32,9 +25,7 @@ if __name__ == '__main__':
         f'{graph.number_of_edges()} edges.')
 
     # Compute the degree distribution.
-    original = degree_distribution(graph)
-    original_normalized = original.normalized()
-    original_ccdf = ccdf(original_normalized)
+    original = degree_distribution(graph, weighted=True)
 
     # Fit the hypothesis.
     fit = pl.Fit(list(original.sequence()), discrete=True)
@@ -52,7 +43,7 @@ if __name__ == '__main__':
 
     # Plot the original data.
     plot = Plot(tex=True, log=log)
-    plot.scatter(original_ccdf)
+    plot.scatter(original.ccdf())
 
     plot.x.label('Degree $k$')
     plot.x.scale('log')
@@ -72,14 +63,9 @@ if __name__ == '__main__':
     x_max = fit.power_law.xmax
 
     truncated = original.truncate(x_min, x_max)
-    truncated_normalized = truncated.normalized()
-    truncated_ccdf = ccdf(truncated_normalized)
-
-    included = truncate(original_normalized, x_min, x_max)
-    excluded = {x: y for x, y in original_normalized.items() if x not in included}
 
     plot = Plot(tex=True, log=log)
-    plot.scatter(truncated_ccdf)
+    plot.scatter(truncated.ccdf())
 
     plot.x.label('Degree $k$')
     plot.x.scale('log')
