@@ -57,16 +57,12 @@ if __name__ == '__main__':
     plot.scatter(included, circles, label='Included Points')
 
     if x_min is not None:
-        plot.x.line(x_min, label='') #, label=f'$x_{{min}} = {x_min}$')
+        plot.x.line(x_min, label=f'$x_{{min}} = {x_min}$')
     if x_max is not None:
         plot.x.line(x_max, label=f'$x_{{max}} = {x_max}$')
 
     # The empirical distribution.
     fit.plot_pdf(ax=plot.ax, original_data=True, color=red, label='Empirical PDF')
-    # The theoretical power-law distribution.
-    fit.power_law.plot_pdf(ax=plot.ax, color=blue, label='Power-Law PDF')
-    # The theoretical truncated power-law distribution.
-    fit.truncated_power_law.plot_pdf(ax=plot.ax, color=green, label='Trunc. Power-Law PDF')
 
     plot.legend()
     plot.save('some-4-a.eps')

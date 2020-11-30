@@ -22,7 +22,7 @@ if __name__ == '__main__':
         f'{graph.number_of_edges()} edges.')
 
     # Compute the distribution.
-    statistic = degree_distribution(graph)
+    statistic = degree_distribution(graph, weighted=True)
 
     log('Computed the statistic.')
 
@@ -44,7 +44,7 @@ if __name__ == '__main__':
     # Generate a sample.
     log('Generating a sample.')
 
-    sample = fit.power_law.generate_random(1000)
+    sample = fit.power_law.generate_random(1)
 
     log('Generated a sample.', sample)
 
