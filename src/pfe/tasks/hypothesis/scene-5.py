@@ -2,11 +2,8 @@
 Plot the complementary cumulative distribution function.
 """
 
-from itertools import combinations
-
 import powerlaw as pl
 
-from pfe.misc.collections import truncate
 from pfe.misc.log import timestamped
 from pfe.misc.plot import Plot, red, blue, green
 from pfe.parse import parse, publications_in
@@ -30,53 +27,43 @@ if __name__ == '__main__':
     # Fit the hypothesis.
     fit = pl.Fit(list(original.sequence()), discrete=True)
 
-    # Compare distributions.
-    log('Comparing distributions...')
-
-    comparison = {
-        (a, b): fit.distribution_compare(a, b, normalized_ratio=True)
-        for a, b in combinations(fit.supported_distributions, r=2)
-    }
-
-    log('\n' + '\n'.join(f'{a:>25}   {b:>25}   {comparison[a, b]}'
-                         for a, b in comparison))
-
-    # Plot the original data.
-    plot = Plot(tex=True, log=log)
-    plot.scatter(original.ccdf())
-
-    plot.x.label('Degree $k$')
-    plot.x.scale('log')
-    plot.x.limit(10 ** -1, 10 ** 4)
-
-    plot.y.label('$CCDF(k)$')
-    plot.y.scale('log')
-    plot.y.limit(10 ** -6, 10 ** 0)
-
-    # Empirical CCDF.
-    fit.plot_ccdf(ax=plot.ax, original_data=True, color=red, linestyle='--', label='Empirical PDF')
-
-    plot.show()
-
-    # Plot the truncated data.
     x_min = fit.power_law.xmin
     x_max = fit.power_law.xmax
 
     truncated = original.truncate(x_min, x_max)
 
+    # Plot the CDF.
     plot = Plot(tex=True, log=log)
-    plot.scatter(truncated.ccdf())
+    plot.scatter(truncated.cdf())
 
-    plot.x.label('Degree $k$')
+    plot.x.label('Weighted Degree $k$')
     plot.x.scale('log')
     plot.x.limit(10 ** -1, 10 ** 4)
 
-    plot.y.label('$CCDF(k)$')
+    plot.y.label('$F(k)$')
     plot.y.scale('log')
-    plot.y.limit(10 ** -6, 10 ** 0)
 
-    fit.plot_ccdf(ax=plot.ax, color=red, linestyle='-.', label='Empirical CCDF')
-    fit.power_law.plot_ccdf(ax=plot.ax, color=blue, linestyle='-.', label='Power-Law CCDF')
-    fit.truncated_power_law.plot_ccdf(ax=plot.ax, color=green, linestyle='-.', label='Truncated Power-Law CCDF')
+    fit.plot_cdf(ax=plot.ax, color=red, label='Empirical CDF')
+    fit.power_law.plot_cdf(ax=plot.ax, color=blue, label='Power-Law CDF')
+    fit.truncated_power_law.plot_cdf(ax=plot.ax, color=green, label='Truncated Power-Law CDF')
 
-    plot.show()
+    plot.legend(location='lower right')
+    plot.save('some-5-a.eps')
+
+    # Plot the CCDF.
+    plot = Plot(tex=True, log=log)
+    plot.scatter(truncated.ccdf())
+
+    plot.x.label('Weighted Degree $k$')
+    plot.x.scale('log')
+    plot.x.limit(10 ** -1, 10 ** 4)
+
+    plot.y.label('$\\overline{F}(k)$')
+    plot.y.scale('log')
+
+    fit.plot_ccdf(ax=plot.ax, color=red, label='Empirical CCDF')
+    fit.power_law.plot_ccdf(ax=plot.ax, color=blue, label='Power-Law CCDF')
+    fit.truncated_power_law.plot_ccdf(ax=plot.ax, color=green, label='Truncated Power-Law CCDF')
+
+    plot.legend(location='lower left')
+    plot.save('some-5-b.eps')

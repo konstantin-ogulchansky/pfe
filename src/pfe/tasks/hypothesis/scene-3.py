@@ -84,9 +84,9 @@ if __name__ == '__main__':
 
     # The empirical distribution.
     fit.plot_pdf(ax=plot.ax, color=red, linestyle='--', label='Empirical PDF')
-    # The theoretical distributions.
+    # The theoretical power-law distribution.
     fit.power_law.plot_pdf(ax=plot.ax, color=blue, linestyle='-.', label='Power-Law PDF')
-    # The theoretical distributions. [2]
+    # The theoretical truncated power-law distribution.
     fit.truncated_power_law.plot_pdf(ax=plot.ax, color=green, linestyle=':', label='Trunc. Power-Law PDF')
 
     plot.legend()

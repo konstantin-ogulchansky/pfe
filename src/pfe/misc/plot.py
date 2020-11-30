@@ -94,10 +94,10 @@ class Plot:
 
         self.ax.plot(x, y, **style, label=label)
 
-    def legend(self, title=None):
+    def legend(self, *, title=None, location=None):
         """..."""
 
-        legend = self.ax.legend(shadow=True, title=title, edgecolor='black')
+        legend = self.ax.legend(shadow=True, title=title, edgecolor='black', loc=location)
 
         frame = legend.get_frame()
         frame.set_linewidth(0.5)

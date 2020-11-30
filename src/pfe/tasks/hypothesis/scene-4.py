@@ -57,16 +57,16 @@ if __name__ == '__main__':
     plot.scatter(included, circles, label='Included Points')
 
     if x_min is not None:
-        plot.x.line(x_min, label=f'$x_{{min}} = {x_min}$')
+        plot.x.line(x_min, label='') #, label=f'$x_{{min}} = {x_min}$')
     if x_max is not None:
         plot.x.line(x_max, label=f'$x_{{max}} = {x_max}$')
 
     # The empirical distribution.
-    fit.plot_pdf(ax=plot.ax, original_data=True, color=red, linestyle='--', label='Empirical PDF')
+    fit.plot_pdf(ax=plot.ax, original_data=True, color=red, label='Empirical PDF')
     # The theoretical power-law distribution.
-    fit.power_law.plot_pdf(ax=plot.ax, color=blue, linestyle='-.', label='Power-Law PDF')
-    # The theoretical distributions. [2]
-    fit.truncated_power_law.plot_pdf(ax=plot.ax, color=green, linestyle=':', label='Trunc. Power-Law PDF')
+    fit.power_law.plot_pdf(ax=plot.ax, color=blue, label='Power-Law PDF')
+    # The theoretical truncated power-law distribution.
+    fit.truncated_power_law.plot_pdf(ax=plot.ax, color=green, label='Trunc. Power-Law PDF')
 
     plot.legend()
     plot.save('some-4-a.eps')
@@ -82,16 +82,18 @@ if __name__ == '__main__':
 
     plot.x.label('Weighted Degree $k$')
     plot.x.scale('log')
+    plot.x.limit(10 ** -1, 10 ** 4)
 
     plot.y.label('$P_w(k)$')
     plot.y.scale('log')
+    plot.y.limit(10 ** -6, 10 ** 0)
 
     # The empirical distribution.
-    fit.plot_pdf(ax=plot.ax, color=red, linestyle='--', label='Empirical PDF')
+    fit.plot_pdf(ax=plot.ax, color=red, label='Empirical PDF')
     # The theoretical power-law distribution.
-    fit.power_law.plot_pdf(ax=plot.ax, color=blue, linestyle='-.', label='Power-Law PDF')
-    # The theoretical distributions. [2]
-    fit.truncated_power_law.plot_pdf(ax=plot.ax, color=green, linestyle=':', label='Trunc. Power-Law PDF')
+    fit.power_law.plot_pdf(ax=plot.ax, color=blue, label='Power-Law PDF')
+    # The theoretical truncated power-law distribution.
+    fit.truncated_power_law.plot_pdf(ax=plot.ax, color=green, label='Trunc. Power-Law PDF')
 
     plot.legend()
     plot.save('some-4-b.eps')
