@@ -49,14 +49,13 @@ if __name__ == '__main__':
         for b in fit.supported_distributions
     }
     comparison = \
-        '\n' + \
         '\n'.join(f'{a:>25}   {b:>25}   {comparison[a, b]}'
                   for a, b in comparison)
 
     with open('COMP' + '-w' * weighted + '-log-likelihood.txt', 'w') as file:
         file.write(comparison)
 
-    log(comparison)
+    log('\n' + comparison)
 
     # Compute the truncated degree distribution
     # (i.e., without points out of `(x_min, x_max)` range).
