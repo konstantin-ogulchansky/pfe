@@ -1,9 +1,11 @@
 """
-Plot the weighted degree distribution.
+Test the hypothesis.
 """
 
+import powerlaw as pl
+import scipy.stats as st
+
 from pfe.misc.log import timestamped
-from pfe.misc.plot import Plot
 from pfe.parse import parse, publications_in
 from pfe.tasks.hypothesis import degree_distribution
 
@@ -19,19 +21,34 @@ if __name__ == '__main__':
         f'{graph.number_of_nodes()} nodes and '
         f'{graph.number_of_edges()} edges.')
 
-    # Compute the weighted degree distribution.
+    # Compute the distribution.
     statistic = degree_distribution(graph, weighted=True)
 
-    # Plot the data.
-    plot = Plot(tex=True, log=log)
-    plot.scatter(statistic.normalized())
+    log('Computed the statistic.')
 
-    plot.x.label('Weighted Degree $k$')
-    plot.x.scale('log')
-    plot.x.limit(10 ** -1, 10 ** 4)
+    # Fit the hypothesis.
+    fit = pl.Fit(list(statistic.sequence()), discrete=True)
 
-    plot.y.label('$P_w(k)$')
-    plot.y.scale('log')
-    plot.y.limit(10 ** -6, 10 ** 0)
+    log('Computed the fit.')
 
-    plot.save('some-2.eps')
+    # Compare distributions.
+    comparison = {
+        (a, b): fit.distribution_compare(a, b, normalized_ratio=True)
+        for a in fit.supported_distributions
+        for b in fit.supported_distributions
+    }
+
+    log('\n' + '\n'.join(f'{a:>25}   {b:>25}   {comparison[a, b]}'
+                         for a, b in comparison))
+
+    # Generate a sample.
+    log('Generating a sample.')
+
+    sample = fit.power_law.generate_random(10000)
+
+    log('Generated a sample.', sample[:500])
+
+    # Perform a K-S test.
+    test = st.kstest(list(statistic.sequence()), sample)
+
+    log('Performed a K-S test.', test)
