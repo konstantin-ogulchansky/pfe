@@ -97,7 +97,7 @@ if __name__ == '__main__':
     fit.plot_pdf(ax=plot.ax, original_data=True, color=red, linestyle='--', label='Empirical PDF')
 
     plot.legend()
-    plot.save(f'COMP' + '-w' * weighted + '-degrees.eps')
+    plot.save(f'COMP' + '-w' * weighted + '-dd.eps')
 
     # Plot estimated theoretical PDFs.
     log('Plotting theoretical PDFs...')
