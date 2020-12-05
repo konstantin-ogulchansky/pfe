@@ -4,8 +4,8 @@ Test the hypothesis.
 
 import random
 import sys
-from collections import Counter, Callable
-from typing import Iterable
+from collections import Counter
+from typing import Iterable, Callable
 
 import powerlaw as pl
 import scipy.stats as st
