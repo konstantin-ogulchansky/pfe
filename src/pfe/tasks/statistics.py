@@ -83,11 +83,11 @@ class Statistic:
         return {k: n / total for k, n in self._p.items()}
 
     def min(self) -> int:
-        """Returns the minimum degree."""
+        """Returns the minimum `x`."""
         return min(self._p.keys())
 
     def max(self) -> int:
-        """Returns the maximum degree."""
+        """Returns the maximum `x`."""
         return max(self._p.keys())
 
     def mean(self) -> float:
