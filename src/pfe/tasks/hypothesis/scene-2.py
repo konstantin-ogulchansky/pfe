@@ -25,7 +25,8 @@ def sample(cdf: dict[int, float], size: int, log: Callable = nothing) -> Iterabl
 
     .. [1] Wikipedia,
        https://en.wikipedia.org/wiki/Inverse_transform_sampling
-    .. [2] Inverse Transform Sampling,
+
+       [2] Inverse Transform Sampling,
        https://stephens999.github.io/fiveMinuteStats/inverse_transform_sampling.html
     """
 
@@ -87,8 +88,11 @@ if __name__ == '__main__':
 
     # Generate a sample.
     with cx(log, 'Generating a sample...'):
-        x = list(range(x_min, x_max + 1))
+        x = list(range(x_min, 3 * x_max + 1))
         y = fit.truncated_power_law.cdf(x)
+
+        assert len(x) == len(y), f'`x` and `y` must have the same size.'
+
         cdf = dict(zip(x, y))
 
         sampled = sample(cdf, size=100000)
