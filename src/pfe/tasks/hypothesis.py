@@ -23,9 +23,8 @@ TODO:
 import random
 import sys
 from decimal import Decimal
-from itertools import combinations
-from math import ceil
-from typing import Callable, Iterable, Tuple
+from math import floor
+from typing import Callable, Iterable, Tuple, Any
 
 import networkx as nx
 import powerlaw as pl
@@ -112,7 +111,7 @@ def sample(cdf: dict[int, float], size: int, log: Callable = nothing) -> Iterabl
     return (draw(i) for i in range(size))
 
 
-def chi_squared(observed: Statistic, expected: dict[int, float]) -> float:
+def chi_squared(observed: dict[int, int], expected: dict[int, float]) -> float:
     """..."""
 
     x_min = min(expected.keys())
@@ -120,7 +119,7 @@ def chi_squared(observed: Statistic, expected: dict[int, float]) -> float:
 
     assert all(x_min <= x <= x_max for x in observed.keys())
 
-    n = observed.total()
+    n = sum(observed.values())
 
     def term(x):
         n_i = Decimal(observed[x]) / Decimal(n)
@@ -131,28 +130,33 @@ def chi_squared(observed: Statistic, expected: dict[int, float]) -> float:
     return n * sum(map(term, expected.keys()))
 
 
-def bins(obs: dict[int, float], exp: dict[int, float], amount: int) \
-        -> Tuple[dict[int, float], dict[int, float]]:
+def bins(obs: dict[int, int], exp: dict[int, float], amount: int) \
+        -> Tuple[dict[int, int], dict[int, float]]:
     """..."""
-
-    for x in exp:
-        assert x in obs
 
     x_min = min(exp)
     x_max = max(exp)
-    width = ceil((x_max - x_min + 1) / amount)
+    width = floor((x_max - x_min + 1) / amount)
 
     new_obs = {}
     new_exp = {}
 
     x = x_min
     while x <= x_max:
-        new_obs[x] = sum(obs.get(x + d) for d in range(width))
-        new_exp[x] = sum(exp.get(x + d) for d in range(width))
+        new_obs[x] = sum(obs.get(x + d, 0) for d in range(width))
+        new_exp[x] = sum(exp.get(x + d, 0) for d in range(width))
 
         x += width
 
     return new_obs, new_exp
+
+
+def normalized(dictionary: dict[Any, int]) -> dict[Any, int]:
+    """..."""
+
+    total = sum(dictionary.values())
+
+    return {x: y / total for x, y in dictionary.items()}
 
 
 if __name__ == '__main__':
@@ -162,27 +166,40 @@ if __name__ == '__main__':
     log('Starting...')
 
     # Construct a graph.
-    graph = parse(publications_in('COMP', between=(1990, 1996), log=log))
+    graph = parse(publications_in('COMP', between=(1990, 2018), log=log))
 
     log(f'Read a graph with '
         f'{graph.number_of_nodes()} nodes and '
         f'{graph.number_of_edges()} edges.')
 
     # Compute the degree distribution.
-    statistic = degree_distribution(graph, weighted=True)
+    original = degree_distribution(graph, weighted=True)
 
     # Fit the hypothesis.
-    fit = pl.Fit(list(statistic.sequence()), discrete=True)
+    fit = pl.Fit(list(original.sequence()), discrete=True)
 
-    x_min = fit.xmin
-    x_max = fit.xmax
+    x_min = int(fit.xmin or original.min())
+    x_max = int(fit.xmax or original.max())
 
-    truncated = statistic.truncate(x_min, x_max)
+    truncated = original.truncate(x_min, x_max)
 
-    x = list(sorted(truncated.keys()))
+    # x = list(sorted(truncated.keys()))
+    x = list(range(x_min, x_max + 1))
 
     cdf = dict(zip(x, fit.truncated_power_law.cdf(x)))
     pdf = dict(zip(x, fit.truncated_power_law.pdf(x)))
 
-    for key in cdf:
-        assert key in statistic.keys()
+    obs = {k: truncated[k] for k in sorted(truncated)}
+    exp = pdf
+
+    bin_obs, bin_exp = \
+        bins(obs, exp, amount=21)
+
+    statistic = chi_squared(bin_obs, bin_exp)
+
+    print(f'Chi-squared statistic with {len(bin_exp)} bins:', statistic)
+
+    print()
+    for amount in range(2, 100):
+        print(f'{amount:>3} bins:', chi_squared(*bins(obs, exp, amount)))
+    print()

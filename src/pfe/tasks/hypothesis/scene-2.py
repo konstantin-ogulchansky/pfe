@@ -75,5 +75,5 @@ if __name__ == '__main__':
     obs = [truncated[x] for x in sorted(truncated.keys())]
     exp = [pdf[x] * n for x in sorted(pdf.keys())]
 
-    print(chi_squared(truncated, pdf))
+    print(chi_squared(truncated.as_dict(), pdf))
     print(st.chisquare(obs, exp))

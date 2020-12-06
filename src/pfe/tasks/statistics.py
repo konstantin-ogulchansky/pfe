@@ -75,6 +75,10 @@ class Statistic:
             while (n := n - 1) >= 0:
                 yield k
 
+    def as_dict(self) -> dict[int, int]:
+        """Returns the distribution values as a dictionary."""
+        return dict(self._p)
+
     def normalized(self) -> dict[int, float]:
         """Returns a normalized distribution."""
 
