@@ -22,11 +22,12 @@ class XAxis:
     def label(self, *args, **kwargs):
         self.ax.set_xlabel(*args, **kwargs)
 
-    def line(self, x, label=None):
-        self.ax.axvline(x, linestyle='dashed', color='black', linewidth=0.75)
+    def ticks(self, values):
+        self.ax.set_xticks([x for x, _ in values])
+        self.ax.set_xticklabels([y for _, y in values])
 
-        if label is not None:
-            self.ax.text(x + 10, 0.005, label, rotation=90)  # TODO: Fix magic values.
+    def line(self, x):
+        self.ax.axvline(x, linestyle='dashed', color='black', linewidth=0.75)
 
 
 class YAxis:
@@ -43,6 +44,10 @@ class YAxis:
 
     def label(self, *args, **kwargs):
         self.ax.set_ylabel(*args, **kwargs)
+
+    def ticks(self, values):
+        self.ax.set_yticks([x for x, _ in values])
+        self.ax.set_yticklabels([y for _, y in values])
 
     def line(self, y, label=None):
         self.ax.axhline(y, linestyle='dashed', color='black', linewidth=0.75)
@@ -99,6 +104,9 @@ class Plot:
 
         self.ax.plot(x, y, **style, label=label)
 
+    def text(self, x, y, label, rotation=0):
+        self.ax.text(x, y, label, rotation=rotation)
+
     def legend(self, *, title=None, location=None):
         """..."""
 
@@ -113,14 +121,14 @@ class Plot:
         self.log('Showing the figure...')
         plt.show()
 
-    def save(self, name):
+    def save(self, name, and_show=True):
         """..."""
 
         self.log(f'Saving the figure `{name}`...')
         plt.savefig(name)
 
-        self.log(f'Showing the figure `{name}`...')
-        plt.show()
+        if and_show:
+            self.show()
 
 
 colors = [

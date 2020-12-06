@@ -15,7 +15,8 @@ if __name__ == '__main__':
     log = timestamped
     log('Starting...')
 
-    weighted = False
+    tex = True
+    weighted = True
 
     # Construct a graph.
     graph = parse(publications_in('COMP', between=(1990, 2018), log=log))
@@ -67,6 +68,11 @@ if __name__ == '__main__':
     x_min = max(filter(None, [fit.power_law.xmin, fit.truncated_power_law.xmin]), default=None)
     x_max = min(filter(None, [fit.power_law.xmax, fit.truncated_power_law.xmax]), default=None)
 
+    if x_min is not None:
+        x_min = int(x_min)
+    if x_max is not None:
+        x_max = int(x_max)
+
     truncated = original.truncate(x_min, x_max)
     truncated_normalized = truncated.normalized()
 
@@ -76,7 +82,7 @@ if __name__ == '__main__':
     included = truncate(original_normalized, x_min, x_max)
     excluded = {x: y for x, y in original_normalized.items() if x not in included}
 
-    plot = Plot(tex=True, log=log)
+    plot = Plot(tex=tex, log=log)
 
     plot.x.label('Weighted ' * weighted + 'Degree $k$')
     plot.x.scale('log')
@@ -86,13 +92,19 @@ if __name__ == '__main__':
     plot.y.scale('log')
     plot.y.limit(10 ** -6, 10 ** 0)
 
-    plot.scatter(excluded, crosses, label='Excluded Points')
-    plot.scatter(included, circles, label='Included Points')
+    plot.scatter(excluded, crosses, label='Excluded Degrees')
+    plot.scatter(included, circles, label='Included Degrees')
 
     if x_min is not None:
-        plot.x.line(x_min, label=f'$x_{{min}} = {x_min}$')
+        dx = 0.75 if weighted else 2.25
+
+        plot.x.line(x_min)
+        plot.text(x_min - dx, 10**-4, f'$x_{{min}} = {x_min}$', rotation=90)
     if x_max is not None:
-        plot.x.line(x_max, label=f'$x_{{max}} = {x_max}$')
+        dx = 0.75 if weighted else 2.25
+
+        plot.x.line(x_max)
+        plot.text(x_min - dx, 10**-4, f'$x_{{max}} = {x_max}$', rotation=90)
 
     fit.plot_pdf(ax=plot.ax, original_data=True, color=red, linestyle='--', label='Empirical PDF')
 
@@ -102,7 +114,7 @@ if __name__ == '__main__':
     # Plot estimated theoretical PDFs.
     log('Plotting theoretical PDFs...')
 
-    plot = Plot(tex=True, log=log)
+    plot = Plot(tex=tex, log=log)
     plot.scatter(truncated_normalized)
 
     plot.x.label('Weighted ' * weighted + 'Degree $k$')
@@ -123,7 +135,7 @@ if __name__ == '__main__':
     # Plot estimated theoretical CDFs.
     log('Plotting theoretical CDFs...')
 
-    plot = Plot(tex=True, log=log)
+    plot = Plot(tex=tex, log=log)
     plot.scatter(truncated.cdf())
 
     plot.x.label('Weighted ' * weighted + 'Degree $k$')
@@ -137,13 +149,19 @@ if __name__ == '__main__':
     fit.power_law.plot_cdf(ax=plot.ax, color=blue, label='Power-Law')
     fit.truncated_power_law.plot_cdf(ax=plot.ax, color=green, label='Power-Law with Cut-Off')
 
+    # Unfortunately, for some reason this must be after `fit.plot_whatever`. :(
+    plot.y.ticks([
+        (10 ** -1, r'$10^{-1}$'),
+        (10 ** 0,  r'$10^{ 0}$')
+    ])
+
     plot.legend(title='CDF', location='lower right')
     plot.save('COMP' + '-w' * weighted + '-cdf.eps')
 
     # Plot estimated theoretical CCDFs.
     log('Plotting theoretical CCDFs...')
 
-    plot = Plot(tex=True, log=log)
+    plot = Plot(tex=tex, log=log)
     plot.scatter(truncated.ccdf())
 
     plot.x.label('Weighted ' * weighted + 'Degree $k$')
