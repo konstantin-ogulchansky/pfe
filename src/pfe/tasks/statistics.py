@@ -45,21 +45,21 @@ class Statistic:
         """Removes a value by the specified key."""
         return self._p.pop(key)
 
-    def cdf(self) -> dict[int, float]:
+    def cdf(self, inclusive: bool = False) -> dict[int, float]:
         """Computes the cumulative distribution function."""
 
         normalized = self.normalized()
 
-        return {k: sum(normalized.get(l, 0) for l in range(k + 1))
+        return {k: sum(normalized.get(l, 0) for l in range(k + 1 if inclusive else k))
                 for k in normalized.keys()}
 
-    def ccdf(self) -> dict[int, float]:
+    def ccdf(self, inclusive: bool = True) -> dict[int, float]:
         """Computes the complementary cumulative distribution function."""
 
         normalized = self.normalized()
         maximum = max(normalized.keys())
 
-        return {k: sum(normalized.get(l, 0) for l in range(k + 1, maximum + 1))
+        return {k: sum(normalized.get(l, 0) for l in range(k if inclusive else k + 1, maximum + 1))
                 for k in normalized.keys()}
 
     def truncate(self,
