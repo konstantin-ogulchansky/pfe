@@ -142,7 +142,7 @@ if __name__ == '__main__':
     plot.x.scale('log')
     plot.x.limit(10 ** -1, 10 ** 4)
 
-    plot.y.label('$F' + 'w_' * weighted + '(k)$')
+    plot.y.label('$F' + '_w' * weighted + '(k)$')
     plot.y.scale('log')
 
     fit.plot_cdf(ax=plot.ax, color=red, label='Empirical')
