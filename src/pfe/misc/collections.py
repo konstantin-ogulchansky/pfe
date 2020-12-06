@@ -14,9 +14,9 @@ def truncate(x: dict[int, Any],
         return dict(x)  # A copy of the original dictionary.
 
     def in_range(x):
-        if min is not None and x <= min:
+        if min is not None and x < min:
             return False
-        if max is not None and x >= max:
+        if max is not None and x > max:
             return False
         return True
 

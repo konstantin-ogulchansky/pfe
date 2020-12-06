@@ -45,9 +45,12 @@ def degree_distribution(graph: nx.Graph, weighted: bool = False) -> Statistic:
     for node in graph.nodes:
         if weighted:
             degrees = graph.degree(weight='weight')
-
             degree = degrees[node]
-            degree = int(degree.quantize(Decimal('1')))
+
+            if isinstance(degree, Decimal):
+                degree = int(degree.quantize(Decimal('1')))
+            else:
+                degree = round(degree)
         else:
             degree = graph.degree[node]
 

@@ -78,9 +78,13 @@ class Statistic:
     def normalized(self) -> dict[int, float]:
         """Returns a normalized distribution."""
 
-        total = sum(self._p.values())
+        total = self.total()
 
         return {k: n / total for k, n in self._p.items()}
+
+    def total(self) -> int:
+        """Returns the total number of observations."""
+        return sum(self._p.values())
 
     def min(self) -> int:
         """Returns the minimum `x`."""
@@ -92,10 +96,7 @@ class Statistic:
 
     def mean(self) -> float:
         """Returns the mean value."""
-
-        total = sum(self._p.values())
-
-        return sum(k * n for k, n in self._p.items()) / total
+        return sum(k * n for k, n in self._p.items()) / self.total()
 
 
 def publications_per_author(publications: list[dict]) -> Statistic:
