@@ -54,7 +54,7 @@ class YAxis:
 class Plot:
     """..."""
 
-    def __init__(self, ax=None, tex=False, log=nothing):
+    def __init__(self, ax=None, tex=False, title=None, log=nothing):
         # Must be before `plt.gca()`.
         if tex:
             plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern Roman']})
@@ -62,6 +62,7 @@ class Plot:
 
         self.ax = ax or plt.gca()
 
+        self.ax.set_title(title)
         self.ax.set_axisbelow(True)
         self.ax.grid(linestyle='--')
 

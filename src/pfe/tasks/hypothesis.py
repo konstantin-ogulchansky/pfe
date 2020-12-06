@@ -20,13 +20,18 @@ TODO:
   - Check binned data?
 """
 
+import random
+import sys
 from decimal import Decimal
 from itertools import combinations
+from math import ceil
+from typing import Callable, Iterable, Tuple
 
 import networkx as nx
 import powerlaw as pl
 
 from pfe.tasks.statistics import Statistic
+from pfe.misc.log import timestamped, nothing
 
 
 def degree_distribution(graph: nx.Graph, weighted: bool = False) -> Statistic:
@@ -60,44 +65,124 @@ def degree_distribution(graph: nx.Graph, weighted: bool = False) -> Statistic:
     return Statistic(distribution)
 
 
+def sample(cdf: dict[int, float], size: int, log: Callable = nothing) -> Iterable[int]:
+    """Draws a sample of the provided `size` according to `cdf`.
+
+    This function implements the inverse transform sampling for drawing a sample
+    according to an arbitrary distribution, defined by the provided CDF.
+
+    Example:
+    ::
+        x = list(range(x_min, x_max + 1))
+        y = fit.truncated_power_law.cdf(x)
+
+        cdf = dict(zip(x, y))
+
+        sampled = sample(cdf, size=1000)
+        sampled = Statistic(Counter(sampled))
+
+    .. [1] Wikipedia,
+       https://en.wikipedia.org/wiki/Inverse_transform_sampling
+
+    .. [2] "Inverse Transform Sampling",
+       https://stephens999.github.io/fiveMinuteStats/inverse_transform_sampling.html
+    """
+
+    x = list(sorted(cdf.keys()))
+
+    def draw(i: int) -> int:
+        u = random.uniform(0, 1)
+        p = 0
+
+        log(f'Sampling {i}/{size} with `u` = {u}.')
+
+        for i in range(len(x)):
+            q = cdf[x[i]]
+
+            if p <= u < q:
+                return x[i]
+            else:
+                p = q
+
+        log(f'The value for `u` = {u} was not found; returning {(m := max(x))}.',
+            file=sys.stderr)
+
+        return m
+
+    return (draw(i) for i in range(size))
+
+
+def chi_squared(observed: Statistic, expected: dict[int, float]) -> float:
+    """..."""
+
+    x_min = min(expected.keys())
+    x_max = max(expected.keys())
+
+    assert all(x_min <= x <= x_max for x in observed.keys())
+
+    n = observed.total()
+
+    def term(x):
+        n_i = Decimal(observed[x]) / Decimal(n)
+        p_i = Decimal(expected[x])
+
+        return (n_i - p_i) ** 2 / p_i
+
+    return n * sum(map(term, expected.keys()))
+
+
+def bins(obs: dict[int, float], exp: dict[int, float], amount: int) \
+        -> Tuple[dict[int, float], dict[int, float]]:
+    """..."""
+
+    for x in exp:
+        assert x in obs
+
+    x_min = min(exp)
+    x_max = max(exp)
+    width = ceil((x_max - x_min + 1) / amount)
+
+    new_obs = {}
+    new_exp = {}
+
+    x = x_min
+    while x <= x_max:
+        new_obs[x] = sum(obs.get(x + d) for d in range(width))
+        new_exp[x] = sum(exp.get(x + d) for d in range(width))
+
+        x += width
+
+    return new_obs, new_exp
+
+
 if __name__ == '__main__':
     from pfe.parse import parse, publications_in
-    from pfe.misc.log import timestamped
 
     log = timestamped
     log('Starting...')
 
     # Construct a graph.
-    graph = parse(publications_in('COMP', between=(1990, 2018), log=log))
+    graph = parse(publications_in('COMP', between=(1990, 1996), log=log))
 
     log(f'Read a graph with '
         f'{graph.number_of_nodes()} nodes and '
         f'{graph.number_of_edges()} edges.')
 
     # Compute the degree distribution.
-    statistic = degree_distribution(graph)
-    statistic_normalized = statistic.normalized()
+    statistic = degree_distribution(graph, weighted=True)
 
     # Fit the hypothesis.
     fit = pl.Fit(list(statistic.sequence()), discrete=True)
 
-    # Compare distributions.
-    distributions = fit.supported_distributions.keys()
+    x_min = fit.xmin
+    x_max = fit.xmax
 
-    log('Comparing distributions...')
+    truncated = statistic.truncate(x_min, x_max)
 
-    comparison = {(a, b): fit.distribution_compare(a, b)
-                  for a, b in combinations(distributions, r=2)}
+    x = list(sorted(truncated.keys()))
 
-    log('\n' + '\n'.join(f"    {a:<25} {b:<25}: {ratio}"
-                         for (a, b), ratio in comparison.items()))
+    cdf = dict(zip(x, fit.truncated_power_law.cdf(x)))
+    pdf = dict(zip(x, fit.truncated_power_law.pdf(x)))
 
-    alpha = fit.power_law.alpha
-    sigma = fit.power_law.sigma
-    x_min = fit.power_law.xmin
-    x_max = fit.power_law.xmax
-
-    log(f'Estimated power-law parameters: \n'
-        f'    α: {alpha} \n'
-        f'    σ: {sigma} \n'
-        f'    x: {(x_min, x_max)}')
+    for key in cdf:
+        assert key in statistic.keys()
