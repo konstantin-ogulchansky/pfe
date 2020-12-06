@@ -16,7 +16,7 @@ if __name__ == '__main__':
     log('Starting...')
 
     tex = True
-    weighted = True
+    weighted = False
 
     # Construct a graph.
     graph = parse(publications_in('COMP', between=(1990, 2018), log=log))
@@ -99,14 +99,14 @@ if __name__ == '__main__':
         dx = 0.75 if weighted else 2.25
 
         plot.x.line(x_min)
-        plot.text(x_min - dx, 10**-4, f'$x_{{min}} = {x_min}$', rotation=90)
+        plot.text(x_min - dx, 1.25 * 10**-4, f'$x_{{min}} = {x_min}$', rotation=90)
     if x_max is not None:
         dx = 0.75 if weighted else 2.25
 
         plot.x.line(x_max)
-        plot.text(x_min - dx, 10**-4, f'$x_{{max}} = {x_max}$', rotation=90)
+        plot.text(x_min - dx, 1.25 * 10**-4, f'$x_{{max}} = {x_max}$', rotation=90)
 
-    fit.plot_pdf(ax=plot.ax, original_data=True, color=red, linestyle='--', label='Empirical PDF')
+    fit.plot_pdf(ax=plot.ax, original_data=True, color=red, label='Empirical PDF')
 
     plot.legend()
     plot.save(f'COMP' + '-w' * weighted + '-dd.eps')
