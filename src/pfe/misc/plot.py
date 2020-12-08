@@ -20,7 +20,7 @@ class Plot:
                  grid: bool = True):
         """Initialises the plot.
 
-        :param ax: an instance of `Axes` to draw on.
+        :param ax: an instance of `Axes` to plot on.
         :param title: a title of the plot.
         :param tex: whether to use TeX and the 'Computer Modern' font;
                     if enabled, plotting may be time consuming.
