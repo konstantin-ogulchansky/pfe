@@ -13,6 +13,28 @@ from pfe.misc.collections import unique
 from pfe.misc.log import nothing
 
 
+def all_publications(between: Tuple[int, int],
+                     **kwargs: Any) -> list[dict]:
+    """Returns a list of publications in all disciplines between the specified years.
+
+    :param between: a tuple of two integers that specifies the (inclusive) year range.
+    :param kwargs: `**kwargs` to pass to `publications_in`.
+
+    :returns: a list of publications.
+    """
+
+    directory = Path.cwd()
+
+    # Find the root of the repository.
+    while all(x.name != '.gitignore' for x in directory.iterdir()):
+        directory = directory.parent
+
+    domains = \
+        [x.name for x in (directory / 'data' / 'clean').iterdir()]
+
+    return publications_in(*domains, between=between, **kwargs)
+
+
 def publications_in(*domains: str,
                     between: Tuple[int, int],
                     **kwargs: Any) -> list[dict]:
@@ -42,8 +64,7 @@ def publications_in(*domains: str,
     {year} is a year in the range as specified by `between`.
 
     :param domains: a sequence of domain codes ('COMP', 'MATH', 'PHYS', etc.).
-    :param between: a tuple of two integers that specifies the (inclusive) range
-
+    :param between: a tuple of two integers that specifies the (inclusive) year range.
     :param kwargs: `**kwargs` to pass to `publications_from`.
 
     :returns: a list of publications.
