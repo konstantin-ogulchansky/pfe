@@ -12,6 +12,11 @@ def nothing(*args: Any, **kwargs: Any):
     the number of `if` statements)."""
 
 
+def plain(*args: Any, **kwargs: Any):
+    """Writes plain text to the standard output."""
+    print(*args, **kwargs)
+
+
 def timestamped(*args: Any, **kwargs: Any):
     """Writes a timestamped log to the standard output (via `print`)."""
     print(f'[{datetime.now()}]', *args, **kwargs)
