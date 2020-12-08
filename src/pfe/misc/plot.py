@@ -112,7 +112,7 @@ class Plot:
 
         :param path: a path to a file to save the plot to.
         :param and_show: whether to show the plot after saving;
-                         very convenient in PyCharm's scientific mode.
+                         very convenient with PyCharm's scientific mode.
         """
 
         plt.savefig(path)
