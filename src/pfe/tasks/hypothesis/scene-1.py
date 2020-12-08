@@ -100,6 +100,7 @@ if __name__ == '__main__':
 
         plot.x.line(x_min)
         plot.text(x_min - dx, 1.25 * 10**-4, f'$x_{{min}} = {x_min}$', rotation=90)
+
     if x_max is not None:
         dx = 0.75 if weighted else 2.25
 
