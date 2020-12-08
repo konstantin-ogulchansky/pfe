@@ -82,7 +82,7 @@ if __name__ == '__main__':
     included = truncate(original_normalized, x_min, x_max)
     excluded = {x: y for x, y in original_normalized.items() if x not in included}
 
-    plot = Plot(tex=tex, log=log)
+    plot = Plot(tex=tex)
 
     plot.x.label('Weighted ' * weighted + 'Degree $k$')
     plot.x.scale('log')
@@ -92,8 +92,8 @@ if __name__ == '__main__':
     plot.y.scale('log')
     plot.y.limit(10 ** -6, 10 ** 0)
 
-    plot.scatter(excluded, crosses, label='Excluded Degrees')
-    plot.scatter(included, circles, label='Included Degrees')
+    plot.scatter(excluded, **crosses, label='Excluded Degrees')
+    plot.scatter(included, **circles, label='Included Degrees')
 
     if x_min is not None:
         dx = 0.75 if weighted else 2.25
@@ -114,7 +114,7 @@ if __name__ == '__main__':
     # Plot estimated theoretical PDFs.
     log('Plotting theoretical PDFs...')
 
-    plot = Plot(tex=tex, log=log)
+    plot = Plot(tex=tex)
     plot.scatter(truncated_normalized)
 
     plot.x.label('Weighted ' * weighted + 'Degree $k$')
@@ -135,7 +135,7 @@ if __name__ == '__main__':
     # Plot estimated theoretical CDFs.
     log('Plotting theoretical CDFs...')
 
-    plot = Plot(tex=tex, log=log)
+    plot = Plot(tex=tex)
     plot.scatter(truncated.cdf())
 
     plot.x.label('Weighted ' * weighted + 'Degree $k$')
@@ -161,7 +161,7 @@ if __name__ == '__main__':
     # Plot estimated theoretical CCDFs.
     log('Plotting theoretical CCDFs...')
 
-    plot = Plot(tex=tex, log=log)
+    plot = Plot(tex=tex)
     plot.scatter(truncated.ccdf())
 
     plot.x.label('Weighted ' * weighted + 'Degree $k$')

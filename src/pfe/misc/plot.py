@@ -1,143 +1,215 @@
 """
-...
+A soft wrapper around `matplotlib` that unifies styling
+and provides a slightly better API for plotting.
 """
+
+from typing import Any, Iterable, Tuple, Optional, Union
 
 import matplotlib.pyplot as plt
 
-from pfe.misc.log import nothing
-
-
-class XAxis:
-    """..."""
-
-    def __init__(self, ax):
-        self.ax = ax
-
-    def limit(self, *args, **kwargs):
-        self.ax.set_xlim(*args, **kwargs)
-
-    def scale(self, *args, **kwargs):
-        self.ax.set_xscale(*args, **kwargs)
-
-    def label(self, *args, **kwargs):
-        self.ax.set_xlabel(*args, **kwargs)
-
-    def ticks(self, values):
-        self.ax.set_xticks([x for x, _ in values])
-        self.ax.set_xticklabels([y for _, y in values])
-
-    def line(self, x):
-        self.ax.axvline(x, linestyle='dashed', color='black', linewidth=0.75)
-
-
-class YAxis:
-    """..."""
-
-    def __init__(self, ax):
-        self.ax = ax
-
-    def limit(self, *args, **kwargs):
-        self.ax.set_ylim(*args, **kwargs)
-
-    def scale(self, *args, **kwargs):
-        self.ax.set_yscale(*args, **kwargs)
-
-    def label(self, *args, **kwargs):
-        self.ax.set_ylabel(*args, **kwargs)
-
-    def ticks(self, values):
-        self.ax.set_yticks([x for x, _ in values])
-        self.ax.set_yticklabels([y for _, y in values])
-
-    def line(self, y, label=None):
-        self.ax.axhline(y, linestyle='dashed', color='black', linewidth=0.75)
-
-        if label is not None:
-            self.ax.text(0.005, y, label)  # TODO: Fix magic values.
+from pfe.tasks.statistics import Statistic
 
 
 class Plot:
-    """..."""
+    """A plot. :)"""
 
-    def __init__(self, ax=None, tex=False, title=None, log=nothing):
-        # Must be before `plt.gca()`.
+    def __init__(self,
+                 ax: Optional[plt.Axes] = None,
+                 title: Optional[str] = None,
+                 tex: bool = False,
+                 grid: bool = True):
+        """Initialises the plot.
+
+        :param ax: an instance of `Axes` to draw on.
+        :param title: a title of the plot.
+        :param tex: whether to use TeX and the 'Computer Modern' font;
+                    if enabled, plotting may be time consuming.
+        :param grid: whether to draw a grid.
+        """
+
         if tex:
+            # Must be before `plt.gca()`.
             plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern Roman']})
             plt.rc('text', usetex=True)
 
         self.ax = ax or plt.gca()
 
-        self.ax.set_title(title)
-        self.ax.set_axisbelow(True)
-        self.ax.grid(linestyle='--')
-
-        self.log = log
+        if title is not None:
+            self.ax.set_title(title)
+        if grid:
+            self.ax.set_axisbelow(True)
+            self.ax.grid(linestyle='--')
 
     @property
-    def x(self):
+    def x(self) -> 'XAxis':
+        """Returns the `x` axis."""
         return XAxis(self.ax)
 
     @property
-    def y(self):
+    def y(self) -> 'YAxis':
+        """Returns the `y` axis."""
         return YAxis(self.ax)
 
-    def scatter(self, dictionary, style=None, label=None):
-        """..."""
+    def scatter(self, data: Union[dict[float, float], Statistic], **kwargs: Any):
+        """Scatters points that are specified in `dictionary`.
 
-        items = list(dictionary.items())
+        :param data: a dictionary that maps `x` to `y`.
+        """
 
+        items = list(data.items())
         x = [x for x, _ in items]
         y = [y for _, y in items]
 
-        self.ax.scatter(x, y, **(style or circles), label=label)
+        # Set the default style.
+        if 'marker' not in kwargs:
+            kwargs = circles | kwargs
 
-    def draw(self, dictionary, style=None, label=None):
-        """..."""
+        self.ax.scatter(x, y, **kwargs)
 
-        if style is None:
-            style = {'color': 'black', 'linewidth': 0.75}
+    def draw(self, data: Union[dict[float, float], Statistic], **kwargs: Any):
+        """Draws a line through (sorted) points that are specified in `dictionary`.
 
-        items = list(sorted(dictionary.items()))
+        :param data: a dictionary that maps `x` to `y`.
+        """
 
+        items = list(sorted(data.items()))
         x = [x for x, _ in items]
         y = [y for _, y in items]
 
-        self.ax.plot(x, y, **style, label=label)
+        # Set the default style.
+        kwargs.setdefault('color', 'black')
+        kwargs.setdefault('linewidth', 0.75)
 
-    def text(self, x, y, label, rotation=0):
-        self.ax.text(x, y, label, rotation=rotation)
+        self.ax.plot(x, y, **kwargs)
 
-    def legend(self, *, title=None, location=None):
-        """..."""
+    def text(self, x: float, y: float, label: str, **kwargs: Any):
+        """An alias for `text`."""
+        self.ax.text(x, y, label, **kwargs)
 
-        legend = self.ax.legend(shadow=True, title=title, edgecolor='black', loc=location)
+    def legend(self, *, location: Optional[str] = None, **kwargs: Any):
+        """Adds the legend."""
+
+        # Set the default style.
+        kwargs.setdefault('shadow', True)
+        kwargs.setdefault('edgecolor', 'black')
+
+        if location is not None:
+            kwargs['loc'] = location
+
+        legend = self.ax.legend(**kwargs)
 
         frame = legend.get_frame()
         frame.set_linewidth(0.5)
 
-    def show(self):
-        """..."""
-
-        self.log('Showing the figure...')
+    @classmethod
+    def show(cls):
+        """Shows the plot."""
         plt.show()
 
-    def save(self, name, and_show=True):
-        """..."""
+    @classmethod
+    def save(cls, path: str, and_show: bool = True):
+        """Saves the plot (and probably shows it too).
 
-        self.log(f'Saving the figure `{name}`...')
-        plt.savefig(name)
+        :param path: a path to a file to save the plot to.
+        :param and_show: whether to show the plot after saving;
+                         very convenient in PyCharm's scientific mode.
+        """
+
+        plt.savefig(path)
 
         if and_show:
-            self.show()
+            cls.show()
 
 
+class XAxis:
+    """Represents the abscissa (the `x` axis)."""
+
+    __slots__ = ('ax',)
+
+    def __init__(self, ax: plt.Axes):
+        self.ax = ax
+
+    def limit(self, *args: Any, **kwargs: Any):
+        """An alias for `set_xlim`."""
+        self.ax.set_xlim(*args, **kwargs)
+
+    def scale(self, *args: Any, **kwargs: Any):
+        """An alias for `set_xscale`."""
+        self.ax.set_xscale(*args, **kwargs)
+
+    def label(self, *args: Any, **kwargs: Any):
+        """An alias for `set_xlabel`."""
+        self.ax.set_xlabel(*args, **kwargs)
+
+    def ticks(self, values: Iterable[Tuple[float, str]]):
+        """Updates ticks via `set_xticks` and `set_xticklabels`.
+
+        :param values: a collection of pairs `(tick, label)`.
+        """
+
+        self.ax.set_xticks([x for x, _ in values])
+        self.ax.set_xticklabels([y for _, y in values])
+
+    def line(self, x: float, **kwargs: Any):
+        """An alias for `axvline`."""
+
+        # Set the default style.
+        kwargs.setdefault('linestyle', 'dashed')
+        kwargs.setdefault('color', 'black')
+        kwargs.setdefault('linewidth', 0.75)
+
+        self.ax.axvline(x, **kwargs)
+
+
+class YAxis:
+    """Represents the ordinate (the `y` axis)."""
+
+    __slots__ = ('ax',)
+
+    def __init__(self, ax: plt.Axes):
+        self.ax = ax
+
+    def limit(self, *args: Any, **kwargs: Any):
+        """An alias for `set_ylim`."""
+        self.ax.set_ylim(*args, **kwargs)
+
+    def scale(self, *args: Any, **kwargs: Any):
+        """An alias for `set_yscale`."""
+        self.ax.set_yscale(*args, **kwargs)
+
+    def label(self, *args: Any, **kwargs: Any):
+        """An alias for `set_ylabel`."""
+        self.ax.set_ylabel(*args, **kwargs)
+
+    def ticks(self, values: Iterable[Tuple[float, str]]):
+        """Updates ticks via `set_yticks` and `set_yticklabels`.
+
+        :param values: a collection of pairs `(tick, label)`.
+        """
+
+        self.ax.set_yticks([x for x, _ in values])
+        self.ax.set_yticklabels([y for _, y in values])
+
+    def line(self, y: float, **kwargs: Any):
+        """An alias for `axhline`."""
+
+        # Set the default style.
+        kwargs.setdefault('linestyle', 'dashed')
+        kwargs.setdefault('color', 'black')
+        kwargs.setdefault('linewidth', 0.75)
+
+        self.ax.axhline(y, **kwargs)
+
+
+# A set of pretty colors.
 colors = [
     red   := '#ff3f3f',
     blue  := '#3f3fff',
     green := '#3fff3f',
 ]
 
-styles = [
+# A set of pretty markers.
+markers = [
     crosses := dict(s=25, color='black', marker='x'),
     circles := dict(s=25, facecolors='none', edgecolors='black'),
 ]
