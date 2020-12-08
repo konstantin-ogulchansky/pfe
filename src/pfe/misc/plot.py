@@ -51,7 +51,7 @@ class Plot:
         return YAxis(self.ax)
 
     def scatter(self, data: Union[dict[float, float], Statistic], **kwargs: Any):
-        """Scatters points that are specified in `dictionary`.
+        """Scatters points that are specified in `data`.
 
         :param data: a dictionary that maps `x` to `y`.
         """
@@ -67,7 +67,7 @@ class Plot:
         self.ax.scatter(x, y, **kwargs)
 
     def draw(self, data: Union[dict[float, float], Statistic], **kwargs: Any):
-        """Draws a line through (sorted) points that are specified in `dictionary`.
+        """Draws a line through (sorted) points that are specified in `data`.
 
         :param data: a dictionary that maps `x` to `y`.
         """
