@@ -39,7 +39,7 @@ if __name__ == '__main__':
 
     # Save the renamed graph to a file.
     with cx(log, 'Saving the graph to a file...'):
-        with open(data / 'mapping.csv', 'w', newline='') as file:
+        with open(data / 'nx_node_mapping.csv', 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerows(mapping.items())
 
