@@ -7,8 +7,6 @@ from typing import Any, Iterable, Iterator, Tuple, Optional
 import networkx as nx
 import community as cm
 
-from pfe.misc.collections import unique
-
 
 class Statistic:
     """A discrete statistic.
@@ -128,8 +126,7 @@ def publications_per_author(publications: list[dict]) -> Statistic:
     authors = {}
 
     for publication in publications:
-        publication_authors = [int(x['id']) for x in publication['authors']]
-        publication_authors = unique(publication_authors, lambda x: x)
+        publication_authors = {int(x['id']) for x in publication['authors']}
 
         for author in publication_authors:
             authors.setdefault(author, 0)

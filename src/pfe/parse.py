@@ -9,7 +9,6 @@ from typing import Optional, Callable, Union, Tuple, Any
 
 import networkx as nx
 
-from pfe.misc.collections import unique
 from pfe.misc.log import nothing
 
 
@@ -143,6 +142,17 @@ def parse(publications: list[dict], into: Optional[nx.Graph] = None) -> nx.Graph
 
     :returns: a constructed social collaboration graph.
     """
+
+    def unique(items: list, select: Callable) -> list:
+        unique = set()
+        result = list()
+
+        for item in items:
+            if (key := select(item)) not in unique:
+                unique.add(key)
+                result.append(item)
+
+        return result
 
     graph = into or nx.Graph()
 
