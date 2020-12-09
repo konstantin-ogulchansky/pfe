@@ -7,7 +7,7 @@ from typing import Any, Iterable, Iterator, Tuple, Optional
 import networkx as nx
 import community as cm
 
-from pfe.misc.collections import truncate, unique
+from pfe.misc.collections import unique
 
 
 class Statistic:
@@ -66,7 +66,21 @@ class Statistic:
                  min: Optional[float] = None,
                  max: Optional[float] = None) -> 'Statistic':
         """Truncates the statistic."""
-        return Statistic(truncate(self._p, min, max))
+
+        def truncate(x: dict[int, Any]) -> dict[int, Any]:
+            if min is None and max is None:
+                return dict(x)  # A copy of the original dictionary.
+
+            def in_range(x):
+                if min is not None and x < min:
+                    return False
+                if max is not None and x > max:
+                    return False
+                return True
+
+            return {x: y for x, y in x.items() if in_range(x)}
+
+        return Statistic(truncate(self._p))
 
     def sequence(self) -> Iterable[int]:
         """Returns the distribution values as a sequence."""

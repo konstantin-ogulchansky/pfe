@@ -4,83 +4,30 @@ Fit the degree distribution.
 
 import powerlaw as pl
 
-from pfe.misc.collections import truncate
-from pfe.misc.log import timestamped
+from pfe.misc.log import timestamped, cx
 from pfe.misc.plot import Plot, red, blue, crosses, circles, green
 from pfe.parse import parse, publications_in
 from pfe.tasks.hypothesis import degree_distribution
+from pfe.tasks.statistics import Statistic
 
 
-if __name__ == '__main__':
-    log = timestamped
-    log('Starting...')
+tex: bool = True
+"""Whether to use TeX in plots."""
 
-    tex = True
-    weighted = False
+weighted: bool = True
+"""Whether to plot the weighted degree distribution."""
 
-    # Construct a graph.
-    graph = parse(publications_in('COMP', between=(1990, 2018), log=log))
 
-    log(f'Read a graph with '
-        f'{graph.number_of_nodes()} nodes and '
-        f'{graph.number_of_edges()} edges.')
+def plot_dd(statistic: Statistic, fit: pl.Fit):
+    """Plots the degree distribution."""
 
-    # Compute the degree distribution.
-    original = degree_distribution(graph, weighted)
-    original_normalized = original.normalized()
+    global tex, weighted
 
-    # Fit the hypothesis.
-    fit = pl.Fit(list(original.sequence()), discrete=True)
+    normalized = statistic.normalized()
+    truncated = statistic.truncate(fit.xmin, fit.xmax)
 
-    log(f'Estimated power-law parameters:'
-        f'    α: {fit.power_law.alpha}'
-        f'    σ: {fit.power_law.sigma}'
-        f'    x: {(fit.power_law.xmin, fit.power_law.xmax)}')
-    log(f'Estimated power-law with cutoff parameters:'
-        f'    α: {fit.truncated_power_law.alpha}'
-        f'    λ: {fit.truncated_power_law.Lambda}'
-        f'    x: {(fit.truncated_power_law.xmin, fit.truncated_power_law.xmax)}')
-
-    # Compare distributions.
-    log('Comparing distributions...')
-
-    comparison = {
-        (a, b): fit.distribution_compare(a, b, normalized_ratio=True)
-        for a in fit.supported_distributions
-        for b in fit.supported_distributions
-    }
-    comparison = \
-        '\n'.join(f'{a:>25}   {b:>25}   {comparison[a, b]}'
-                  for a, b in comparison)
-
-    with open('COMP' + '-w' * weighted + '-log-likelihood.txt', 'w') as file:
-        file.write(comparison)
-
-    log('\n' + comparison)
-
-    # Compute the truncated degree distribution
-    # (i.e., without points out of `(x_min, x_max)` range).
-    if fit.power_law.xmin != fit.truncated_power_law.xmin:
-        log('`x_min` differs for power-law and power-law with cutoff.')
-    if fit.power_law.xmax != fit.truncated_power_law.xmax:
-        log('`x_max` differs for power-law and power-law with cutoff.')
-
-    x_min = max(filter(None, [fit.power_law.xmin, fit.truncated_power_law.xmin]), default=None)
-    x_max = min(filter(None, [fit.power_law.xmax, fit.truncated_power_law.xmax]), default=None)
-
-    if x_min is not None:
-        x_min = int(x_min)
-    if x_max is not None:
-        x_max = int(x_max)
-
-    truncated = original.truncate(x_min, x_max)
-    truncated_normalized = truncated.normalized()
-
-    # Plot the data.
-    log('Plotting the data...')
-
-    included = truncate(original_normalized, x_min, x_max)
-    excluded = {x: y for x, y in original_normalized.items() if x not in included}
+    included = {x: y for x, y in normalized.items() if x in truncated}
+    excluded = {x: y for x, y in normalized.items() if x not in truncated}
 
     plot = Plot(tex=tex)
 
@@ -95,28 +42,33 @@ if __name__ == '__main__':
     plot.scatter(excluded, **crosses, label='Excluded Degrees')
     plot.scatter(included, **circles, label='Included Degrees')
 
-    if x_min is not None:
+    if fit.xmin is not None:
         dx = 0.75 if weighted else 2.25
 
-        plot.x.line(x_min)
-        plot.text(x_min - dx, 1.25 * 10**-4, f'$x_{{min}} = {x_min}$', rotation=90)
+        plot.x.line(fit.xmin)
+        plot.text(fit.xmin - dx, 1.25 * 10**-4, f'$x_{{min}} = {fit.xmin:g}$', rotation=90)
 
-    if x_max is not None:
+    if fit.xmax is not None:
         dx = 0.75 if weighted else 2.25
 
-        plot.x.line(x_max)
-        plot.text(x_min - dx, 1.25 * 10**-4, f'$x_{{max}} = {x_max}$', rotation=90)
+        plot.x.line(fit.xmax)
+        plot.text(fit.xmax - dx, 1.25 * 10**-4, f'$x_{{max}} = {fit.xmax:g}$', rotation=90)
 
     fit.plot_pdf(ax=plot.ax, original_data=True, color=red, label='Empirical PDF')
 
     plot.legend()
     plot.save(f'COMP' + '-w' * weighted + '-dd.eps')
 
-    # Plot estimated theoretical PDFs.
-    log('Plotting theoretical PDFs...')
+
+def plot_pdf(statistic: Statistic, fit: pl.Fit):
+    """Plots theoretical PDFs."""
+
+    global tex, weighted
+
+    truncated = statistic.truncate(fit.xmin, fit.xmax)
 
     plot = Plot(tex=tex)
-    plot.scatter(truncated_normalized)
+    plot.scatter(truncated.normalized())
 
     plot.x.label('Weighted ' * weighted + 'Degree $k$')
     plot.x.scale('log')
@@ -133,8 +85,13 @@ if __name__ == '__main__':
     plot.legend(title='PDF')
     plot.save('COMP' + '-w' * weighted + '-pdf.eps')
 
-    # Plot estimated theoretical CDFs.
-    log('Plotting theoretical CDFs...')
+
+def plot_cdf(statistic: Statistic, fit: pl.Fit):
+    """Plots theoretical CDFs."""
+
+    global tex, weighted
+
+    truncated = statistic.truncate(fit.xmin, fit.xmax)
 
     plot = Plot(tex=tex)
     plot.scatter(truncated.cdf())
@@ -159,8 +116,13 @@ if __name__ == '__main__':
     plot.legend(title='CDF', location='lower right')
     plot.save('COMP' + '-w' * weighted + '-cdf.eps')
 
-    # Plot estimated theoretical CCDFs.
-    log('Plotting theoretical CCDFs...')
+
+def plot_ccdf(statistic: Statistic, fit: pl.Fit):
+    """Plots theoretical CCDFs."""
+
+    global tex, weighted
+
+    truncated = statistic.truncate(fit.xmin, fit.xmax)
 
     plot = Plot(tex=tex)
     plot.scatter(truncated.ccdf())
@@ -178,3 +140,63 @@ if __name__ == '__main__':
 
     plot.legend(title='CCDF', location='lower left')
     plot.save('COMP' + '-w' * weighted + '-ccdf.eps')
+
+
+if __name__ == '__main__':
+    log = timestamped
+    log('Starting...')
+
+    # Construct a graph.
+    graph = parse(publications_in('COMP', between=(1990, 2018), log=log))
+
+    log(f'Read a graph with '
+        f'{graph.number_of_nodes()} nodes and '
+        f'{graph.number_of_edges()} edges.')
+
+    # Compute the degree distribution.
+    with cx(log, 'Computing the degree distribution...'):
+        statistic = degree_distribution(graph, weighted)
+
+    # Fit the hypothesis.
+    with cx(log, 'Fitting the hypothesis...'):
+        fit = pl.Fit(list(statistic.sequence()), discrete=True)
+
+        log(f'Estimated power-law parameters:'
+            f'    α: {fit.power_law.alpha}'
+            f'    σ: {fit.power_law.sigma}'
+            f'    x: {(fit.power_law.xmin, fit.power_law.xmax)}')
+        log(f'Estimated power-law with cutoff parameters:'
+            f'    α: {fit.truncated_power_law.alpha}'
+            f'    λ: {fit.truncated_power_law.Lambda}'
+            f'    x: {(fit.truncated_power_law.xmin, fit.truncated_power_law.xmax)}')
+
+        if not fit.xmin == fit.power_law.xmin == fit.truncated_power_law.xmin:
+            log('`xmin` differs.')
+        if not fit.xmax == fit.power_law.xmax == fit.truncated_power_law.xmax:
+            log('`xmax` differs.')
+
+    # Compare distributions.
+    with cx(log, 'Comparing distributions...'):
+        comparison = {
+            (a, b): fit.distribution_compare(a, b, normalized_ratio=True)
+            for a in fit.supported_distributions
+            for b in fit.supported_distributions
+        }
+        comparison = \
+            '\n'.join(f'{a:>25}   {b:>25}   {comparison[a, b]}'
+                      for a, b in comparison)
+
+        with open('COMP' + '-w' * weighted + '-log-likelihood.txt', 'w') as file:
+            file.write(comparison)
+
+        log('\n' + comparison)
+
+    # Plotting.
+    with cx(log, 'Plotting data...'):
+        plot_dd(statistic, fit)
+    with cx(log, 'Plotting theoretical PDFs...'):
+        plot_pdf(statistic, fit)
+    with cx(log, 'Plotting theoretical CDFs...'):
+        plot_cdf(statistic, fit)
+    with cx(log, 'Plotting theoretical CCDfs...'):
+        plot_ccdf(statistic, fit)
