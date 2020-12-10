@@ -1,29 +1,38 @@
-# *Vertices 2232963
-# *Edges
+"""
+...
+"""
+
 import json
+from pathlib import Path
+
 import igraph as ig
-from pfe.misc.log import timestamped
+
+from pfe.misc.log import Log, Pretty, blue, bold
 
 
-timestamped('Start: ig_graph')
-graph = ig.Graph.Read_Pajek('ig-graph-data/ig_full_graph_relabeled_nodes.net')
-timestamped('Finish')
+if __name__ == '__main__':
+    log: Log = Pretty()
+    log.info('Starting...')
 
+    data = Path('../../data/graph')
 
-timestamped('Leiden: computing communities')
-partitions = graph.community_leiden(objective_function="modularity", weights='weight')
+    with log.info('Reading `ig.Graph`...'):
+        graph = ig.Graph.Read_Pajek(str(data / 'ig_full_graph_relabeled_nodes.net'))
 
-communities_file = 'leiden_comp_communities'
-timestamped('Leiden: saving communities into file')
-with(open(f'{communities_file}.json', 'w')) as components_file:
-    json.dump(dict(enumerate(x for x in partitions)), components_file)
+        log.info(f'Read a graph with '
+                 f'{blue | len(graph.vs)} vertices and '
+                 f'{blue | len(graph.es)} edges.')
 
-print()
-print(partitions.modularity)
-print()
-timestamped('Leiden: saving modularity value into file')
-modularity_file = 'leiden_modularity'
-with(open(f'{modularity_file}.json', 'w')) as components_file:
-    json.dump(partitions.modularity, components_file)
+    with log.info(f'Detecting communities using the {bold | "Leiden"} method...'):
+        communities = graph.community_leiden(objective_function='modularity', weights='weight')
 
+        log.info('The number of communities: ' + str(len(communities)))
+        log.info('The modularity value:      ' + str(communities.modularity))
 
+    with log.info('Saving communities into a file...'):
+        with open(data / 'leiden_communities.json', 'w') as file:
+            json.dump(dict(enumerate(communities)), file)
+
+    with log.info('Saving the modularity value into a file...'):
+        with open(data / 'leiden_modularity.json', 'w') as file:
+            json.dump(communities.modularity, file)

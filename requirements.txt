@@ -4,4 +4,5 @@ networkx~=2.5
 matplotlib~=3.3.3
 powerlaw~=1.4.6
 python-louvain~=0.14
+python-igraph~=0.8.3
 colorama~=0.4.4
