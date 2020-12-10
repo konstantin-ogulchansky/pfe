@@ -94,15 +94,52 @@ class StyledText:
         return StyledText(f(self.raw), self.style, self.reset)
 
 
-styles = [
-    red    := Style(colorama.Fore.RED),
-    blue   := Style(colorama.Fore.BLUE),
-    green  := Style(colorama.Fore.GREEN),
-    yellow := Style(colorama.Fore.YELLOW),
-    gray   := Style(colorama.Fore.LIGHTBLACK_EX),
+def code(value: int) -> str:
+    """Constructs an ANSI code with the provided `value`."""
+    return '\033[' + str(value) + 'm'
 
-    normal := Style(colorama.Style.NORMAL),
-    bold   := Style(colorama.Style.BRIGHT),
-    dim    := Style(colorama.Style.DIM),
+
+styles = [
+    red     := Style(colorama.Fore.RED),
+    blue    := Style(colorama.Fore.BLUE),
+    green   := Style(colorama.Fore.GREEN),
+    yellow  := Style(colorama.Fore.YELLOW),
+    magenta := Style(colorama.Fore.MAGENTA),
+    cyan    := Style(colorama.Fore.CYAN),
+    gray    := Style(colorama.Fore.LIGHTBLACK_EX),
+
+    normal  := Style(colorama.Style.NORMAL),
+    bold    := Style(colorama.Style.BRIGHT),
+    dim     := Style(colorama.Style.DIM),
+
+    # Some neat codes that are not supported by `colorama`,
+    # but are handled properly by the terminal in PyCharm.
+    italic     := Style(code(3)),
+    underlined := Style(code(4)),
+    strike     := Style(code(9)),
+    framed     := Style(code(51)),
 ]
 """A list of predefined styles."""
+
+
+if __name__ == '__main__':
+    text: str = ' text '
+
+    # Showing every style.
+    print('Styles.')
+    for style in styles:
+        print('  -',
+              repr(style.codes[0]).ljust(12),
+              style.apply(text),
+              colorama.Style.RESET_ALL)
+
+    print()
+
+    # Showing some examples of how styles can be combined.
+    print('Examples.')
+    print('  -', bold | red | text)
+    print('  -', italic | green | text)
+    print('  -', underlined | blue | text)
+    print('  -', framed | magenta | text)
+    print('  -', strike | cyan | text)
+    print('  -', bold | italic | strike | framed | yellow | text)
