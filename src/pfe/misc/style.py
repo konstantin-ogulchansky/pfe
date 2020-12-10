@@ -13,8 +13,8 @@ class Style:
 
     Examples.
     ::
-        bold  = Style(colorama.Style.BRIGHT)
-        red   = Style(colorama.Fore.RED)
+        bold = Style(colorama.Style.BRIGHT)
+        red  = Style(colorama.Fore.RED)
 
         print(bold | red | 'text')
 
