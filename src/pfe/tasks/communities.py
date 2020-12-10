@@ -3,41 +3,71 @@ Community detection.
 """
 
 import json
-from collections import Counter
+from pathlib import Path
 
-import community as louvain
+import community
 import networkx as nx
+import igraph as ig
+
+from pfe.misc.style import blue, underlined
+from pfe.misc.log import Log, Pretty
 
 
-def save(communities: dict, path: str):
-    """Saves the sizes of `communities` to a file.
+def louvain(data: Path, log: Log):
+    """Community detection using the Louvain method."""
 
-    :param communities: a dictionary that maps each member of a network
-                        (i.e., each node) to their community.
-    :param path: a path to a file to save community sizes to.
-    """
+    with log.info('Reading `nx.Graph`...'):
+        graph = nx.read_weighted_edgelist(data / 'nx_full_graph_relabeled_nodes.txt')
 
-    with open(path, 'w') as file:
-        json.dump(Counter(communities.values()), file)
+        log.info(f'Read a graph with '
+                 f'{blue | graph.number_of_nodes()} nodes and '
+                 f'{blue | graph.number_of_edges()} edges.')
+
+    with log.info(f'Detecting communities using the {underlined | "Louvain"} method...'):
+        communities = community.best_partition(graph)
+
+    with log.info('Saving communities into a file...'):
+        new_communities = {}
+        for x, y in communities.items():
+            new_communities.setdefault(y, [])
+            new_communities[y].append(x)
+
+        with open(data / 'louvain_communities.json', 'w') as file:
+            json.dump(new_communities, file)
+
+
+def leiden(data: Path, log: Log):
+    """Community detection using the Leiden method."""
+
+    with log.info('Reading `ig.Graph`...'):
+        graph = ig.Graph.Read_Pajek(str(data / 'ig_full_graph_relabeled_nodes.net'))
+
+        log.info(f'Read a graph with '
+                 f'{blue | len(graph.vs)} vertices and '
+                 f'{blue | len(graph.es)} edges.')
+
+    with log.info(f'Detecting communities using the {underlined | "Leiden"} method...'):
+        objective = 'modularity'
+        communities = graph.community_leiden(objective_function=objective, weights='weight')
+
+        log.info('The objective:               ' + objective)
+        log.info('The number of communities:   ' + str(blue | len(communities)))
+        log.info('The modularity value:        ' + str(blue | communities.modularity))
+
+    with log.info('Saving communities into a file...'):
+        with open(data / 'leiden_communities.json', 'w') as file:
+            json.dump(dict(enumerate(communities)), file)
+
+    with log.info('Saving the modularity value into a file...'):
+        with open(data / 'leiden_modularity.json', 'w') as file:
+            json.dump(communities.modularity, file)
 
 
 if __name__ == '__main__':
-    from pfe.misc.log import timestamped, cx
+    log: Log = Pretty()
+    log.info('Starting...')
 
-    log = timestamped
-    log('Starting...')
+    data = Path('../../../data/graph')
 
-    with cx(log, 'Reading a graph...'):
-        graph = nx.read_weighted_edgelist('../../nx_full_graph_relabeled_nodes.txt')
-
-    log(f'Read a graph with '
-        f'{graph.number_of_nodes()} nodes and '
-        f'{graph.number_of_edges()} edges.')
-
-    # Detect communities using the Louvain method.
-    with cx(log, 'Detecting communities using the Louvain method...'):
-        communities = louvain.best_partition(graph)
-
-    # Save detected communities to a file.
-    with cx(log, 'Saving communities to a file...'):
-        save(communities, 'components_nx_full_graph.json')
+    louvain(data, log)
+    # leiden(data, log)
