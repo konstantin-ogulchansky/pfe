@@ -5,13 +5,19 @@ Contains functions for logging.
 from abc import ABCMeta, abstractmethod
 from contextlib import nullcontext
 from datetime import datetime
-from typing import ContextManager, Callable, Union, Any
+from typing import ContextManager, Callable, Any
 
 import colorama
 
+from pfe.misc.style import red, green, blue, yellow, gray, bold, StyledText
+
 
 class Log(metaclass=ABCMeta):
-    """..."""
+    """An interface of all loggers.
+
+    Each of the methods return a context manager that can be used
+    to write nested logs. See, for example, `Pretty(Log)`.
+    """
 
     def debug(self, text: Any) -> ContextManager:
         """Logs `text` with the 'DEBUG' tag."""
@@ -43,12 +49,36 @@ class Nothing(Log):
 
 
 class Pretty(Log):
-    """Logs pretty """
+    """Logs pretty colored and timestamped text.
 
-    TAG_WIDTH = 7  # Justification width for tags.
+    For example, the output of the following code
+    ::
+        log = Pretty()
+        log.debug('A.')
+
+        with log.info('Nesting...'):
+            log.warn('B.')
+            log.warn('C.')
+
+    will be
+    ::
+        [yyyy-mm-dd HH-MM-SS.ffffff] DEBUG   A.
+        [yyyy-mm-dd HH-MM-SS.ffffff] INFO    Nesting...
+        [yyyy-mm-dd HH-MM-SS.ffffff] WARN    |   B.
+        [yyyy-mm-dd HH-MM-SS.ffffff] WARN    |   C.
+        [yyyy-mm-dd HH-MM-SS.ffffff] INFO    Nesting... Done.
+
+    :param indent: the size of an indent that will be used when the
+                    nesting level is increased (defaults to 4).
+    :param out: a callable that will be used to write logs
+                (defaults to `print`).
+    """
+
+    # Justification width for tags.
+    TAG_WIDTH = 7
 
     class Cx:
-        """A context manager that manages the indent of logs."""
+        """Manages the indent of logs."""
 
         def __init__(self, log: 'Pretty', tag: Any, text: Any, done: Any = 'Done.'):
             self._log = log
@@ -72,7 +102,7 @@ class Pretty(Log):
 
     def __init__(self, out: Callable = print, indent: int = 4):
         if indent < 1:
-            raise ValueError('`indent` must be at least 1.')
+            raise ValueError(f'`indent` must be at least 1, got {indent}.')
 
         # For cross-platforming.
         colorama.init()
@@ -102,70 +132,18 @@ class Pretty(Log):
         if isinstance(tag, StyledText):
             tag = tag.map(lambda x: x.ljust(self.TAG_WIDTH))
 
+        timestamp = f'[{datetime.now()}]'
+
         indent = str(gray('|')) + ' ' * (self._indent - 1)
         indent = indent * self._nesting
 
-        self._out(f'[{datetime.now()}]', tag, indent + str(text))
+        self._out(timestamp, tag, indent + str(text))
 
         return Pretty.Cx(self, tag, text)
 
 
-class Style:
-    """..."""
-
-    def __init__(self, *codes: str):
-        self.codes = codes
-
-    def __str__(self) -> str:
-        """..."""
-        return ''.join(self.codes)
-
-    def __call__(self, style_or_str: Union['Style', str]) -> Union['Style', 'StyledText']:
-        """..."""
-
-        if isinstance(style_or_str, Style):
-            return Style(*self.codes, *style_or_str.codes)
-        else:
-            return StyledText(style_or_str, self)
-
-    def __or__(self, style_or_str: Union['Style', str]) -> Union['Style', 'StyledText']:
-        """..."""
-        return self(style_or_str)
-
-
-class StyledText:
-    """..."""
-
-    def __init__(self, raw: Any, style: Style, reset: bool = True):
-        self.raw = str(raw)
-        self.style = style
-        self.reset = reset
-
-    def __str__(self) -> str:
-        """Applies the style to the text."""
-        return str(self.style) + self.raw + (colorama.Style.RESET_ALL * self.reset)
-
-    def map(self, f: Callable) -> 'StyledText':
-        """Maps the underlying text with the provided function."""
-        return StyledText(f(self.raw), self.style, self.reset)
-
-
-styles = [
-    red    := Style(colorama.Fore.RED),
-    blue   := Style(colorama.Fore.BLUE),
-    green  := Style(colorama.Fore.GREEN),
-    yellow := Style(colorama.Fore.YELLOW),
-    gray   := Style(colorama.Fore.LIGHTBLACK_EX),
-
-    normal := Style(colorama.Style.NORMAL),
-    bold   := Style(colorama.Style.BRIGHT),
-    dim    := Style(colorama.Style.DIM),
-]
-"""A list of predefined styles."""
-
-
 if __name__ == '__main__':
-    log = Pretty()
+    log: Log = Pretty()
     log.info('Starting...')
 
     with log.debug('First nesting...'):
