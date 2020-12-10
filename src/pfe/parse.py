@@ -100,7 +100,7 @@ def publications_from(paths: Union[str, list[str]],
                      seems to be distorted since there are much more
                      publications with 100 authors than there should have been.
     :param where: a predicate to filter parsed publications.
-    :param log: a function to log steps of the execution with.
+    :param log: an instance of `Log` to log steps of the execution with.
 
     :returns: a list of publications.
     """
