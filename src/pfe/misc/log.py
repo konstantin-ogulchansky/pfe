@@ -136,8 +136,8 @@ class Style:
 class StyledText:
     """..."""
 
-    def __init__(self, raw: str, style: Style, reset: bool = True):
-        self.raw = raw
+    def __init__(self, raw: Any, style: Style, reset: bool = True):
+        self.raw = str(raw)
         self.style = style
         self.reset = reset
 

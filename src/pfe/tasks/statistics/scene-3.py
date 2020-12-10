@@ -3,35 +3,43 @@ Calculating and plotting the distribution of
 the number of communities per publication.
 """
 
-from pfe.misc.log import timestamped
+from pfe.misc.log import Log, Pretty, blue
 from pfe.misc.plot import Plot
 from pfe.parse import parse, publications_in
 from pfe.tasks.statistics import communities_per_publication
 
 
 if __name__ == '__main__':
-    log = timestamped
-    log('Starting.')
+    log: Log = Pretty()
+    log.info('Starting...')
 
-    # Load publications and construct a graph.
-    publications = publications_in('COMP', between=(1990, 2018), log=log)
-    graph = parse(publications)
+    # Reading publications.
+    with log.info('Reading publications...'):
+        publications = publications_in('COMP', between=(1990, 2018), log=log)
 
-    log('Constructed a graph.')
+        log.info(f'Read {blue | len(publications)} publications.')
 
-    # Calculate the statistic.
-    statistic = communities_per_publication(graph, publications)
+    # Constructing a graph.
+    with log.info('Constructing a graph...'):
+        graph = parse(publications)
 
-    log('Computed the statistic.')
+        log.info(f'Constructed a graph with '
+                 f'{blue | graph.number_of_nodes()} nodes and '
+                 f'{blue | graph.number_of_edges()} edges.')
+
+    # Compute the statistic.
+    with log.info('Computing the distribution of communities per publication...'):
+        statistic = communities_per_publication(graph, publications)
 
     # Plot the statistic.
-    plot = Plot(tex=True)
-    plot.scatter(statistic)
-    plot.draw(statistic)
+    with log.info('Plotting the distribution...'):
+        plot = Plot(tex=True)
+        plot.scatter(statistic)
+        plot.draw(statistic)
 
-    plot.x.label('Number of Communities')
+        plot.x.label('Number of Communities')
 
-    plot.y.label('Number of Publications')
-    plot.y.scale('log')
+        plot.y.label('Number of Publications')
+        plot.y.scale('log')
 
-    plot.save('some-3.eps')
+        plot.save('COMP-cpp.eps')

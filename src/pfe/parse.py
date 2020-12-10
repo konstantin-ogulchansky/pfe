@@ -9,7 +9,7 @@ from typing import Optional, Callable, Union, Tuple, Any
 
 import networkx as nx
 
-from pfe.misc.log import nothing
+from pfe.misc.log import Log, Nothing
 
 
 def all_publications(between: Tuple[int, int],
@@ -85,7 +85,7 @@ def publications_in(*domains: str,
 def publications_from(paths: Union[str, list[str]],
                       skip_100: bool = True,
                       where: Optional[Callable] = None,
-                      log: Callable = nothing) -> list[dict]:
+                      log: Log = Nothing()) -> list[dict]:
     """Returns a list of publications from files specified
     by the provided `paths`.
 
@@ -123,7 +123,7 @@ def publications_from(paths: Union[str, list[str]],
         return True
 
     for path in paths:
-        log(f'Processing `{path}`...')
+        log.info(f'Processing `{path}`...')
 
         with open(path, 'r') as file:
             data = json.load(file)
@@ -195,11 +195,14 @@ def parse(publications: list[dict], into: Optional[nx.Graph] = None) -> nx.Graph
 
 
 if __name__ == '__main__':
-    from pfe.misc.log import timestamped
+    from pfe.misc.log import Pretty, blue
 
-    graph = parse(publications_in('COMP', between=(1990, 2018), log=timestamped))
+    log: Log = Pretty()
+    log.info('Starting...')
 
-    print()
-    print('Unique names:', len({node['name'] for _, node in graph.nodes(data=True)}))
-    print('Nodes:', graph.number_of_nodes())
-    print('Edges:', graph.number_of_edges())
+    with log.info('Reading a graph...'):
+        graph = parse(publications_in('COMP', between=(1990, 1996), log=log))
+
+        log.info(f'Read a graph with '
+                 f'{blue | graph.number_of_nodes()} nodes and '
+                 f'{blue | graph.number_of_edges()} edges.')
