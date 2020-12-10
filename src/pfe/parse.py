@@ -10,7 +10,7 @@ from typing import Optional, Callable, Union, Tuple, Any
 import networkx as nx
 
 from pfe.misc.log import Log, Nothing
-from pfe.misc.style import cyan, magenta
+from pfe.misc.style import magenta
 
 
 def all_publications(between: Tuple[int, int],

@@ -6,6 +6,7 @@ from abc import ABCMeta, abstractmethod
 from contextlib import nullcontext
 from datetime import datetime
 from typing import ContextManager, Callable, Any
+import sys
 
 import colorama
 
@@ -80,10 +81,11 @@ class Pretty(Log):
     class Cx:
         """Manages the indent of logs."""
 
-        def __init__(self, log: 'Pretty', tag: Any, text: Any, done: Any = (bold | 'Done.')):
+        def __init__(self, log: 'Pretty', indent: str, tag: Any, text: Any, done: Any = (bold | 'Done.')):
             self._log = log
             self._tag = tag
             self._text = text
+            self._indent = indent
             self._done = lambda x: str(x) + ' ' + str(done)
 
         def done(self, f: Callable) -> 'Pretty.Cx':
@@ -92,13 +94,17 @@ class Pretty(Log):
 
         def __enter__(self):
             """Increases the nesting level of the log."""
+
             self._log._nesting += 1  # NOQA.
+
+            sys.stdout.write('\b' * (len(self._text) + 2))
+            sys.stdout.write(str(gray('┌ ')) + self._text)
 
         def __exit__(self, exc_type, exc_val, exc_tb):
             """Decreases the nesting level and prints the log."""
 
             self._log._nesting -= 1  # NOQA.
-            self._log(self._tag, self._done(self._text))
+            self._log(self._tag, self._done(self._text), exit=True)
 
     def __init__(self, out: Callable = print, indent: int = 4):
         if indent < 1:
@@ -110,6 +116,7 @@ class Pretty(Log):
         self._out = out
         self._indent = indent
         self._nesting = 0
+        self._newline = True
 
     def debug(self, text: Any) -> ContextManager:
         return self(bold | green | 'DEBUG', text)
@@ -123,7 +130,7 @@ class Pretty(Log):
     def error(self, text: Any) -> ContextManager:
         return self(bold | red | 'ERROR', text)
 
-    def __call__(self, tag: Any, text: Any) -> ContextManager:
+    def __call__(self, tag: Any, text: Any, exit: bool = False) -> ContextManager:
         """Logs the provided `text` with the specified `tag`,
         a timestamp and an indent."""
 
@@ -134,12 +141,33 @@ class Pretty(Log):
 
         timestamp = f'[{datetime.now()}]'
 
-        indent = str(gray('|')) + ' ' * (self._indent - 1)
+        indent = str(gray('│')) + ' ' * (self._indent - 1)
         indent = indent * self._nesting
 
-        self._out(timestamp, tag, indent + str(text))
+        if not exit:
+            line = f'{timestamp} {tag} {indent}  {text}'
+        else:
+            line = f'{timestamp} {tag} {indent}{gray("└ ")}{text}'
 
-        return Pretty.Cx(self, tag, text)
+        if not self._newline:
+            sys.stdout.write('\n')
+
+        sys.stdout.write(line)
+
+        self._newline = False
+
+        return Pretty.Cx(self, indent, tag, text)
+
+    @classmethod
+    def _format_prefix(cls, tag: str) -> str:
+        """..."""
+
+        if isinstance(tag, str):
+            tag = tag.ljust(cls.TAG_WIDTH)
+        if isinstance(tag, StyledText):
+            tag = tag.map(lambda x: x.ljust(cls.TAG_WIDTH))
+
+        return f'[{datetime.now()}] {tag}'
 
 
 if __name__ == '__main__':
