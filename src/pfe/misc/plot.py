@@ -40,6 +40,12 @@ class Plot:
             self.ax.set_axisbelow(True)
             self.ax.grid(linestyle='--')
 
+        # self.ax.set_color_cycle([
+        #     '#ff3f3f',  # Red.
+        #     '#3f3fff',  # Blue.
+        #     '#3fff3f',  # Green.
+        # ])
+
     @property
     def x(self) -> 'XAxis':
         """Returns the `x` axis."""
@@ -200,13 +206,6 @@ class YAxis:
 
         self.ax.axhline(y, **kwargs)
 
-
-# A set of pretty colors.
-colors = [
-    red   := '#ff3f3f',
-    blue  := '#3f3fff',
-    green := '#3fff3f',
-]
 
 # A set of pretty markers.
 markers = [

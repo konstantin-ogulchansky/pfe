@@ -21,16 +21,15 @@ TODO:
 """
 
 import random
-import sys
 from decimal import Decimal
 from math import floor
-from typing import Callable, Iterable, Tuple, Any
+from typing import Iterable, Tuple, Any
 
 import networkx as nx
 import powerlaw as pl
 
 from pfe.tasks.statistics import Statistic
-from pfe.misc.log import timestamped, nothing
+from pfe.misc.log import Log, Nothing, Pretty, blue
 
 
 def degree_distribution(graph: nx.Graph, weighted: bool = False) -> Statistic:
@@ -64,7 +63,7 @@ def degree_distribution(graph: nx.Graph, weighted: bool = False) -> Statistic:
     return Statistic(distribution)
 
 
-def sample(cdf: dict[int, float], size: int, log: Callable = nothing) -> Iterable[int]:
+def sample(cdf: dict[int, float], size: int, log: Log = Nothing()) -> Iterable[int]:
     """Draws a sample of the provided `size` according to `cdf`.
 
     This function implements the inverse transform sampling for drawing a sample
@@ -93,7 +92,7 @@ def sample(cdf: dict[int, float], size: int, log: Callable = nothing) -> Iterabl
         u = random.uniform(0, 1)
         p = 0
 
-        log(f'Sampling {i}/{size} with `u` = {u}.')
+        log.info(f'Sampling {i}/{size} with `u` = {u}.')
 
         for i in range(len(x)):
             q = cdf[x[i]]
@@ -103,8 +102,7 @@ def sample(cdf: dict[int, float], size: int, log: Callable = nothing) -> Iterabl
             else:
                 p = q
 
-        log(f'The value for `u` = {u} was not found; returning {(m := max(x))}.',
-            file=sys.stderr)
+        log.error(f'The value for `u` = {u} was not found; returning {(m := max(x))}.')
 
         return m
 
@@ -162,21 +160,24 @@ def normalized(dictionary: dict[Any, int]) -> dict[Any, int]:
 if __name__ == '__main__':
     from pfe.parse import parse, publications_in
 
-    log = timestamped
-    log('Starting...')
+    log: Log = Pretty()
+    log.info('Starting...')
 
     # Construct a graph.
-    graph = parse(publications_in('COMP', between=(1990, 2018), log=log))
+    with log.info('Reading a graph...'):
+        graph = parse(publications_in('COMP', between=(1990, 2018), log=log))
 
-    log(f'Read a graph with '
-        f'{graph.number_of_nodes()} nodes and '
-        f'{graph.number_of_edges()} edges.')
+        log.info(f'Read a graph with '
+                 f'{blue | graph.number_of_nodes()} nodes and '
+                 f'{blue | graph.number_of_edges()} edges.')
 
     # Compute the degree distribution.
-    original = degree_distribution(graph, weighted=True)
+    with log.info('Computing the degree distribution...'):
+        original = degree_distribution(graph, weighted=True)
 
     # Fit the hypothesis.
-    fit = pl.Fit(list(original.sequence()), discrete=True)
+    with log.info('Fitting the hypothesis...'):
+        fit = pl.Fit(list(original.sequence()), discrete=True)
 
     x_min = int(fit.xmin or original.min())
     x_max = int(fit.xmax or original.max())

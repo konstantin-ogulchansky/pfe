@@ -96,7 +96,7 @@ class StyledText:
 
 def code(value: int) -> str:
     """Constructs an ANSI code with the provided `value`."""
-    return '\033[' + str(value) + 'm'
+    return f'\033[{value}m'
 
 
 styles = [
@@ -123,7 +123,7 @@ styles = [
 
 
 if __name__ == '__main__':
-    text: str = ' text '
+    text = ' text '
 
     # Showing every style.
     print('Styles.')

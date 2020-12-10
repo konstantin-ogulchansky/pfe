@@ -2,10 +2,13 @@
 Fit the degree distribution.
 """
 
+from contextlib import redirect_stderr
+from unittest.mock import MagicMock
+
 import powerlaw as pl
 
-from pfe.misc.log import timestamped, cx
-from pfe.misc.plot import Plot, red, blue, crosses, circles, green
+from pfe.misc.log import Log, Pretty, blue
+from pfe.misc.plot import Plot, crosses, circles
 from pfe.parse import parse, publications_in
 from pfe.tasks.hypothesis import degree_distribution
 from pfe.tasks.statistics import Statistic
@@ -54,7 +57,7 @@ def plot_dd(statistic: Statistic, fit: pl.Fit):
         plot.x.line(fit.xmax)
         plot.text(fit.xmax - dx, 1.25 * 10**-4, f'$x_{{max}} = {fit.xmax:g}$', rotation=90)
 
-    fit.plot_pdf(ax=plot.ax, original_data=True, color=red, label='Empirical PDF')
+    fit.plot_pdf(ax=plot.ax, original_data=True, label='Empirical PDF')
 
     plot.legend()
     plot.save(f'COMP' + '-w' * weighted + '-dd.eps')
@@ -78,9 +81,9 @@ def plot_pdf(statistic: Statistic, fit: pl.Fit):
     plot.y.scale('log')
     plot.y.limit(10 ** -6, 10 ** 0)
 
-    fit.plot_pdf(ax=plot.ax, color=red, label='Empirical')
-    fit.power_law.plot_pdf(ax=plot.ax, color=blue, label='Power-Law')
-    fit.truncated_power_law.plot_pdf(ax=plot.ax, color=green, label='Power-Law with Cut-Off')
+    fit.plot_pdf(ax=plot.ax, label='Empirical')
+    fit.power_law.plot_pdf(ax=plot.ax, label='Power-Law')
+    fit.truncated_power_law.plot_pdf(ax=plot.ax, label='Power-Law with Cut-Off')
 
     plot.legend(title='PDF')
     plot.save('COMP' + '-w' * weighted + '-pdf.eps')
@@ -103,9 +106,9 @@ def plot_cdf(statistic: Statistic, fit: pl.Fit):
     plot.y.label('$F' + '_w' * weighted + '(k)$')
     plot.y.scale('log')
 
-    fit.plot_cdf(ax=plot.ax, color=red, label='Empirical')
-    fit.power_law.plot_cdf(ax=plot.ax, color=blue, label='Power-Law')
-    fit.truncated_power_law.plot_cdf(ax=plot.ax, color=green, label='Power-Law with Cut-Off')
+    fit.plot_cdf(ax=plot.ax, label='Empirical')
+    fit.power_law.plot_cdf(ax=plot.ax, label='Power-Law')
+    fit.truncated_power_law.plot_cdf(ax=plot.ax, label='Power-Law with Cut-Off')
 
     # Unfortunately, for some reason this must be after `fit.plot_whatever`. :(
     plot.y.ticks([
@@ -134,69 +137,67 @@ def plot_ccdf(statistic: Statistic, fit: pl.Fit):
     plot.y.label('$\\overline{F}' + '_w' * weighted + '(k)$')
     plot.y.scale('log')
 
-    fit.plot_ccdf(ax=plot.ax, color=red, label='Empirical')
-    fit.power_law.plot_ccdf(ax=plot.ax, color=blue, label='Power-Law')
-    fit.truncated_power_law.plot_ccdf(ax=plot.ax, color=green, label='Power-Law with Cut-Off')
+    fit.plot_ccdf(ax=plot.ax, label='Empirical')
+    fit.power_law.plot_ccdf(ax=plot.ax, label='Power-Law')
+    fit.truncated_power_law.plot_ccdf(ax=plot.ax, label='Power-Law with Cut-Off')
 
     plot.legend(title='CCDF', location='lower left')
     plot.save('COMP' + '-w' * weighted + '-ccdf.eps')
 
 
 if __name__ == '__main__':
-    log = timestamped
-    log('Starting...')
+    log: Log = Pretty()
+    log.info('Starting...')
 
-    # Construct a graph.
-    graph = parse(publications_in('COMP', between=(1990, 2018), log=log))
+    with log.info('Reading a graph...'):
+        graph = parse(publications_in('COMP', between=(1990, 2018), log=log))
 
-    log(f'Read a graph with '
-        f'{graph.number_of_nodes()} nodes and '
-        f'{graph.number_of_edges()} edges.')
+        log.info(f'Read a graph with '
+                 f'{blue | graph.number_of_nodes()} nodes and '
+                 f'{blue | graph.number_of_edges()} edges.')
 
-    # Compute the degree distribution.
-    with cx(log, 'Computing the degree distribution...'):
+    with log.info('Computing the degree distribution...'):
         statistic = degree_distribution(graph, weighted)
 
-    # Fit the hypothesis.
-    with cx(log, 'Fitting the hypothesis...'):
+    with log.info('Fitting the hypothesis...'):
         fit = pl.Fit(list(statistic.sequence()), discrete=True)
 
-        log(f'Estimated power-law parameters:'
-            f'    α: {fit.power_law.alpha}'
-            f'    σ: {fit.power_law.sigma}'
-            f'    x: {(fit.power_law.xmin, fit.power_law.xmax)}')
-        log(f'Estimated power-law with cutoff parameters:'
-            f'    α: {fit.truncated_power_law.alpha}'
-            f'    λ: {fit.truncated_power_law.Lambda}'
-            f'    x: {(fit.truncated_power_law.xmin, fit.truncated_power_law.xmax)}')
+        with log.info('Estimating power-law parameters...'):
+            log.info(f'α: {fit.power_law.alpha}')
+            log.info(f'σ: {fit.power_law.sigma}')
+            log.info(f'x: {[fit.power_law.xmin, fit.power_law.xmax]}')
+
+        with log.info('Estimating power-law with cutoff parameters...'):
+            log.info(f'α: {fit.truncated_power_law.alpha}')
+            log.info(f'λ: {fit.truncated_power_law.Lambda}')
+            log.info(f'x: {[fit.truncated_power_law.xmin, fit.truncated_power_law.xmax]}')
 
         if not fit.xmin == fit.power_law.xmin == fit.truncated_power_law.xmin:
-            log('`xmin` differs.')
+            log.warn('`xmin` differs.')
         if not fit.xmax == fit.power_law.xmax == fit.truncated_power_law.xmax:
-            log('`xmax` differs.')
+            log.warn('`xmax` differs.')
 
-    # Compare distributions.
-    with cx(log, 'Comparing distributions...'):
-        comparison = {
-            (a, b): fit.distribution_compare(a, b, normalized_ratio=True)
-            for a in fit.supported_distributions
-            for b in fit.supported_distributions
-        }
-        comparison = \
-            '\n'.join(f'{a:>25}   {b:>25}   {comparison[a, b]}'
-                      for a, b in comparison)
+    with log.info('Comparing distributions...'):
+        comparison = {}
+
+        for a in fit.supported_distributions:
+            for b in fit.supported_distributions:
+                # Get rid of `stderr` messages that
+                # `distribution_compare` generates.
+                with redirect_stderr(MagicMock()):
+                    comparison[a, b] = fit.distribution_compare(a, b)
+
+                log.info(f'{a:<23} {b:<23} {comparison[a, b]}')
 
         with open('COMP' + '-w' * weighted + '-log-likelihood.txt', 'w') as file:
-            file.write(comparison)
+            file.write('\n'.join(f'{a:<23} {b:<23} {comparison[a, b]}'
+                                 for a, b in comparison))
 
-        log('\n' + comparison)
-
-    # Plotting.
-    with cx(log, 'Plotting data...'):
+    with log.info('Plotting the degree distribution...'):
         plot_dd(statistic, fit)
-    with cx(log, 'Plotting theoretical PDFs...'):
+    with log.info('Plotting theoretical PDFs...'):
         plot_pdf(statistic, fit)
-    with cx(log, 'Plotting theoretical CDFs...'):
+    with log.info('Plotting theoretical CDFs...'):
         plot_cdf(statistic, fit)
-    with cx(log, 'Plotting theoretical CCDfs...'):
+    with log.info('Plotting theoretical CCDfs...'):
         plot_ccdf(statistic, fit)
