@@ -69,5 +69,5 @@ if __name__ == '__main__':
 
     data = Path('../../../data/graph')
 
-    louvain(data, log)
-    # leiden(data, log)
+    # louvain(data / 'nx', log)
+    leiden(data / 'ig', log)
