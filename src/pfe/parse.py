@@ -10,6 +10,7 @@ from typing import Optional, Callable, Union, Tuple, Any
 import networkx as nx
 
 from pfe.misc.log import Log, Nothing
+from pfe.misc.style import cyan, magenta
 
 
 def all_publications(between: Tuple[int, int],
@@ -122,8 +123,11 @@ def publications_from(paths: Union[str, list[str]],
 
         return True
 
-    for path in paths:
-        log.info(f'Processing `{path}`...')
+    def quoted(string: str) -> str:
+        return '"' + string + '"'
+
+    for i, path in enumerate(paths, start=1):
+        log.info(f'Processing {magenta | quoted(path.name)} [{i / len(paths) * 100:>5.1f}%]...')
 
         with open(path, 'r') as file:
             data = json.load(file)
@@ -166,9 +170,9 @@ def parse(publications: list[dict], into: Optional[nx.Graph] = None) -> nx.Graph
             u = int(author['id'])
 
             if not graph.has_node(u):
-                graph.add_node(u, name=author['name'], weight=0)
+                graph.add_node(u, name=author['name'], publications=0)
 
-            graph.nodes[u]['weight'] += 1
+            graph.nodes[u]['publications'] += 1
 
         # Add edges.
         n = len(authors)
@@ -177,19 +181,21 @@ def parse(publications: list[dict], into: Optional[nx.Graph] = None) -> nx.Graph
             u = int(authors[i]['id'])
 
             if not graph.has_edge(u, u):
-                graph.add_edge(u, u, weight=0)
+                graph.add_edge(u, u, weight=0, collaborations=0)
 
             # We need to add `1 / (n * 2)` because self-loops are
             # counted twice in a degree.
             graph.edges[u, u]['weight'] += Decimal(1) / Decimal(n * 2)
+            graph.edges[u, u]['collaborations'] += 1
 
             for j in range(i + 1, n):
                 v = int(authors[j]['id'])
 
                 if not graph.has_edge(u, v):
-                    graph.add_edge(u, v, weight=0)
+                    graph.add_edge(u, v, weight=0, collaborations=0)
 
                 graph.edges[u, v]['weight'] += Decimal(1) / Decimal(n)
+                graph.edges[u, v]['collaborations'] += 1
 
     return graph
 
