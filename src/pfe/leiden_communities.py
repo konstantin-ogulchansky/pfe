@@ -7,8 +7,8 @@ from pathlib import Path
 
 import igraph as ig
 
-from pfe.misc.log import Log, Pretty, blue, bold
-
+from pfe.misc.log import Log, Pretty
+from pfe.misc.style import blue, underlined
 
 if __name__ == '__main__':
     log: Log = Pretty()
@@ -23,11 +23,13 @@ if __name__ == '__main__':
                  f'{blue | len(graph.vs)} vertices and '
                  f'{blue | len(graph.es)} edges.')
 
-    with log.info(f'Detecting communities using the {bold | "Leiden"} method...'):
-        communities = graph.community_leiden(objective_function='modularity', weights='weight')
+    with log.info(f'Detecting communities using the {underlined | "Leiden"} method...'):
+        objective = 'modularity'
+        communities = graph.community_leiden(objective_function=objective, weights='weight')
 
-        log.info('The number of communities: ' + str(len(communities)))
-        log.info('The modularity value:      ' + str(communities.modularity))
+        log.info('The objective:               ' + objective)
+        log.info('The number of communities:   ' + str(blue | len(communities)))
+        log.info('The modularity value:        ' + str(blue | communities.modularity))
 
     with log.info('Saving communities into a file...'):
         with open(data / 'leiden_communities.json', 'w') as file:

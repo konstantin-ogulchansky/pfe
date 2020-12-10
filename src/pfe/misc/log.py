@@ -80,7 +80,7 @@ class Pretty(Log):
     class Cx:
         """Manages the indent of logs."""
 
-        def __init__(self, log: 'Pretty', tag: Any, text: Any, done: Any = 'Done.'):
+        def __init__(self, log: 'Pretty', tag: Any, text: Any, done: Any = (bold | 'Done.')):
             self._log = log
             self._tag = tag
             self._text = text
