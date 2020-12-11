@@ -4,7 +4,7 @@
 
 from dataclasses import dataclass, asdict
 from itertools import product
-from typing import Callable, Union
+from typing import Callable, Union, Iterable
 
 import numpy as np
 
@@ -35,7 +35,7 @@ class Parameters:
     p: Union[np.ndarray, list[list[float]]]
     m: Union[np.ndarray, list[float]]
     gamma: float
-    distribution: Callable[[], float]
+    distribution: Callable[[], int]
 
     def __post_init__(self):
         """Validate parameters of the model."""
@@ -139,7 +139,7 @@ class Graph:
         q1, q2 = pair
         h1, h2 = parameters.distribution(), parameters.distribution()
 
-        def hyperedge(q, h):
+        def hyperedge(q: float, h: int) -> Iterable[int]:
             x = len(self.nodes[q])  # The number of nodes in the community `q`.
             y = len(self.e[q])      # The number of... something?
             p = parameters.gamma * x / (y + parameters.gamma * x)
@@ -171,11 +171,11 @@ class Graph:
             self.e[q2].append(u)
 
 
-def normal(loc: float, scale: float) -> Callable[[], float]:
-    """Returns a function that generates random values according to
+def normal(loc: float, scale: float) -> Callable[[], int]:
+    """Returns a function that generates integer random values according to
     the normal (Gaussian) distribution with parameters `loc` and `scale`."""
 
-    def next() -> float:
+    def next() -> int:
         return round(np.random.normal(loc=loc, scale=scale))
 
     return next
