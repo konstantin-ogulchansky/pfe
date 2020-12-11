@@ -2,12 +2,14 @@
 Contains functions for logging.
 """
 
+import sys
 from abc import ABCMeta, abstractmethod
-from contextlib import nullcontext
+from contextlib import nullcontext, redirect_stdout, redirect_stderr
 from datetime import datetime
+from io import StringIO
+from traceback import format_tb
 from types import TracebackType
 from typing import ContextManager, Any, IO, Type
-from sys import stdout
 
 import colorama
 
@@ -80,9 +82,9 @@ class Pretty(Log):
     TAG_WIDTH = 5
 
     # Symbols used to write nested logs.
-    NESTED_ENTER = str(gray('╭'))  # Another option: ┌.
-    NESTED       = str(gray('│'))
-    NESTED_EXIT  = str(gray('╰'))  # Another option: └.
+    NESTED_ENTER = str(gray('╭'))  # Another option: ┌
+    NESTED       = str(gray('│'))  # Another option: ├
+    NESTED_EXIT  = str(gray('╰'))  # Another option: └
 
     class Record:
         """A record to log."""
@@ -110,11 +112,11 @@ class Pretty(Log):
             return f'[{self._timestamp}] {tag} {indent}{nesting} {text}'
 
         def refreshed(self) -> 'Pretty.Record':
-            """Refreshes the timestamp of a record."""
+            """Returns a new record with a refreshed timestamp."""
             return Pretty.Record(self._log, self._tag, self._text)
 
-    class Cx:
-        """Manages the indent of logs."""
+    class Scope:
+        """Manages the scope of logs."""
 
         def __init__(self, log: 'Pretty', record: 'Pretty.Record'):
             self._log = log
@@ -134,14 +136,29 @@ class Pretty(Log):
         def __exit__(self, exc_type: Type[BaseException], exc_val: BaseException, exc_tb: TracebackType):
             """Decreases the nesting level and prints the log."""
 
-            record = self._record.refreshed()
-
             self._log._nesting -= 1
 
-            self._log._out.write(self._log._newline)
-            self._log._out.write(record.format(Pretty.NESTED_EXIT) + str(bold | ' Done.'))
+            if exc_type is None:
+                record = self._record.refreshed()
 
-    def __init__(self, out: IO = stdout, indent: int = 4):
+                self._log._out.write(self._log._newline)
+                self._log._out.write(record.format(Pretty.NESTED_EXIT)
+                                     + str(bold | ' Done.'))
+            else:
+                record = Pretty.Record(self._log, bold | red | 'ERROR', self._record._text)
+
+                self._log._out.write(self._log._newline)
+                self._log._out.write(record.format(Pretty.NESTED_EXIT)
+                                     + str(bold | f' Erred with `{red | exc_type.__name__}`.'))
+
+                tb = format_tb(exc_tb)
+                tb = '\n'.join(tb)
+                tb = str(red | tb)
+
+                self._log._out.write('\n\n')
+                self._log._out.write(tb)
+
+    def __init__(self, out: IO = sys.stdout, indent: int = 4, hook: bool = True):
         if indent < 1:
             raise ValueError(f'`indent` must be at least 1, got {indent}.')
 
@@ -152,6 +169,11 @@ class Pretty(Log):
         self._indent = indent
         self._nesting = 0
         self._newline = ''
+
+        # Intercept exceptions and do not print them;
+        # they are printed in `Scope.__exit__`.
+        if hook:
+            sys.excepthook = lambda *args, **kwargs: ...
 
     def debug(self, text: Any) -> ContextManager:
         return self(bold | green | 'DEBUG', text)
@@ -176,22 +198,55 @@ class Pretty(Log):
 
         self._newline = '\n'
 
-        return Pretty.Cx(self, record)
+        return Pretty.Scope(self, record)
+
+
+def redirect(out: str, to: Log) -> ContextManager:
+    """Redirects an IO as specified in `out` to the provided log."""
+
+    class EventIO(StringIO):
+
+        def __init__(self, sub):
+            super().__init__()
+            self._sub = sub
+
+        def write(self, __s: str) -> int:
+            result = super(EventIO, self).write(__s)
+            self._sub(__s)
+            return result
+
+    import re
+
+    event = EventIO(lambda x: to.warn(re.sub(r'\s*\n\s*', '  •  ', x)) if not x.isspace() else ...)
+
+    if out == 'stdout':
+        cx = redirect_stdout(event)
+    if out == 'stderr':
+        cx = redirect_stderr(event)
+
+    try:
+        cx.__enter__()  # NOQA.
+        return cx
+    except NameError:
+        raise ValueError(f'Invalid `out` value: "{out}".')
 
 
 if __name__ == '__main__':
     log: Log = Pretty()
-    log.info('Starting...')
+    log.debug('Starting...')
 
-    with log.debug('First nesting...'):
+    with log.info('First nesting...'):
         log.info('A.')
         log.info('B.')
 
-        with log.error('Second nesting...'):
-            log.warn('C.')
-            log.warn('D.')
+        with log.warn('Second nesting...'):
+            log.error('C.')
 
         with log.info('Third nesting...'):
-            log.error('E.')
+            pass
+
+    with log.info('Fourth nesting...'):
+        log.debug('D.')
+        log.debug('E.')
 
     log.info('Finished.')
