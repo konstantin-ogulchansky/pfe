@@ -1,5 +1,5 @@
 """
-...
+A model that generates hypergraphs.
 """
 
 from dataclasses import dataclass, asdict
