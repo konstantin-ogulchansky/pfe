@@ -80,9 +80,9 @@ class Pretty(Log):
     TAG_WIDTH = 5
 
     # Symbols used to write nested logs.
-    NESTED_ENTER = str(gray('┌'))
+    NESTED_ENTER = str(gray('╭'))  # Another option: ┌.
     NESTED       = str(gray('│'))
-    NESTED_EXIT  = str(gray('└'))
+    NESTED_EXIT  = str(gray('╰'))  # Another option: └.
 
     class Record:
         """A record to log."""
