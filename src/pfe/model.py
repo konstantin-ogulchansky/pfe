@@ -200,15 +200,18 @@ if __name__ == '__main__':
         )
 
         with log.info('Parameters.'):
+            def flat(x: str) -> str:
+                return x.replace('\n', '')
+
             for key, value in asdict(parameters).items():
-                log.info(f'{str(magenta | key):<20} = {value}')
+                log.info(f'{str(magenta | key):<21} = {flat(str(value))}')
 
         data = Graph.generate(parameters)
 
         with log.info('Generated.'):
-            log.info(f'{magenta | "nodes"}: {data.nodes}')
-            log.info(f'{magenta | "edges"}: {data.edges}')
-            log.info(f'{magenta | "d"}:     {data.d}')
-            log.info(f'{magenta | "e"}:     {data.e}')
-            log.info(f'{magenta | "v"}:     {data.v}')
-            log.info(f'{magenta | "q"}:     {data.q}')
+            log.info(f'{magenta | "nodes"} = {data.nodes}')
+            log.info(f'{magenta | "edges"} = {data.edges}')
+            log.info(f'{magenta | "d"}     = {data.d}')
+            log.info(f'{magenta | "e"}     = {data.e}')
+            log.info(f'{magenta | "v"}     = {data.v}')
+            log.info(f'{magenta | "q"}     = {data.q}')
