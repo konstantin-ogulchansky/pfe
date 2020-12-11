@@ -13,15 +13,6 @@ from pfe.misc.log import Log, Pretty
 from pfe.misc.style import magenta
 
 
-def gaussian(loc, scale):
-    """..."""
-
-    def next():
-        return round(np.random.normal(loc=loc, scale=scale))
-
-    return next
-
-
 @dataclass
 class Parameters:
     # noinspection PyUnresolvedReferences
@@ -180,6 +171,16 @@ class Graph:
             self.e[q2].append(u)
 
 
+def normal(loc: float, scale: float) -> Callable[[], float]:
+    """Returns a function that generates random values according to
+    the normal (Gaussian) distribution with parameters `loc` and `scale`."""
+
+    def next() -> float:
+        return round(np.random.normal(loc=loc, scale=scale))
+
+    return next
+
+
 if __name__ == '__main__':
     log: Log = Pretty()
     log.info('Starting.')
@@ -195,7 +196,7 @@ if __name__ == '__main__':
             p=[[0.25, 0.25], [0.25, 0.25]],
             m=[0.5, 0.5],
             gamma=20,
-            distribution=gaussian(loc=2, scale=0),
+            distribution=normal(loc=2, scale=0),
         )
 
         with log.info('Parameters.'):
