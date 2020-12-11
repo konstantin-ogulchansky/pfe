@@ -115,6 +115,59 @@ class Statistic:
         return sum(k * n for k, n in self._p.items()) / self.total()
 
 
+def number_of_authors(publications: list[dict]) -> int:
+    """Computes the number of different authors.
+    Authors are differentiated by their ID.
+
+    :param: a list of publications.
+
+    :return: the number of authors.
+    """
+
+    authors = set()
+    for publication in publications:
+        authors.update(x['id'] for x in publication['authors'])
+
+    return len(authors)
+
+
+def number_of_publications(publications: list[dict]) -> int:
+    """Computes the number of publications.
+    (This function exists rather for consistency.)
+
+    :param: a list of publications.
+
+    :return: the number of publications.
+    """
+    return len(publications)
+
+
+def number_of_collaborations(graph: nx.Graph, weighted: bool = False) -> int:
+    """Computes the number of [weighted] collaborations.
+
+    The number of unweighted collaborations is the number
+    of edges in the collaboration graph (excluding self-loops).
+
+    The number of weighted collaborations is the total number
+    of collaborations between different authors (i.e., if authors
+    X and Y collaborated twice, then 2 will be added to the result).
+
+    :param graph: a collaboration graph.
+    :param weighted: whether to compute the number of weighted collaborations.
+
+    :return: the number of [weighted] collaborations.
+    """
+
+    if not weighted:
+        # The number of edges excluding self-loops.
+        return sum(u != v for u, v in graph.edges)
+    else:
+        # The total number of collaborations between different authors.
+        return sum(edge['collaborations']
+                   for u, v, edge in graph.edges(data=True)
+                   if u != v)
+
+
 def publications_per_author(publications: list[dict]) -> Statistic:
     """Computes the distribution of publications per author.
 
@@ -217,21 +270,3 @@ def partition_of_authors(graph: nx.Graph, publications: Any, partition_size: int
         )))
 
     return proportions
-
-
-if __name__ == '__main__':
-    from pfe.parse import publications_in
-    from pfe.misc.log import timestamped
-
-    # Construct a graph.
-    publications = publications_in('COMP', between=(1990, 2018), log=timestamped)
-
-    # Calculate a statistic.
-    statistic = publications_per_author(publications)
-    normalized = statistic.normalized()
-
-    # Print the statistic.
-    print()
-    print('Degree   Fraction')
-    for x, y in sorted(normalized.items(), key=lambda z: z[0]):
-        print(f'{x:>6}   {y:.15f}')
