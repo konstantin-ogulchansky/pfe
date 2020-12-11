@@ -20,10 +20,10 @@ class Parameters:
 
     :param n0: the initial number of nodes.
     :param n: the final number of nodes.
-    :param pv: probability to add a node alone.
-    :param pve: probability to add a node + an edge.
-    :param p: the matrix of collaboration.
-    :param m: the vector of probability to belong to a community.
+    :param pv: a probability to add a node alone.
+    :param pve: a probability to add a node + an edge.
+    :param p: a (`d`-dimensional "square") matrix of collaborations.
+    :param m: a vector of probability to belong to a community.
     :param gamma: the probability to choose a node `u` is `deg(u) + gamma`.
     :param distribution: the distribution to be used.
     """
@@ -43,6 +43,11 @@ class Parameters:
         self.p = np.asarray(self.p)
         self.m = np.asarray(self.m)
 
+        if self.n0 < len(self.p):
+            raise ValueError('`n0` must be greater or equal to the size of `p`.')
+        if self.n0 > self.n:
+            raise ValueError('`n0` must be less or equal to `n`.')
+
         if not 0 <= self.pv <= 1:
             raise ValueError('`pv` must be in [0, 1].')
         if not 0 <= self.pve <= 1:
@@ -57,9 +62,6 @@ class Parameters:
             raise ValueError('`p` must be normalised.')
         if self.m.sum() != 1:
             raise ValueError('`m` must be normalised.')
-
-        if self.n0 < len(self.p):
-            raise ValueError('`n0` must be greater or equal to the size of `p`.')
 
 
 class Graph:
