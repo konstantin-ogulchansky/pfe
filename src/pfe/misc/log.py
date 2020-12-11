@@ -65,10 +65,10 @@ class Pretty(Log):
     will be
     ::
         [yyyy-mm-dd HH-MM-SS.ffffff] DEBUG   A.
-        [yyyy-mm-dd HH-MM-SS.ffffff] INFO  ┌ Nesting...
+        [yyyy-mm-dd HH-MM-SS.ffffff] INFO  ╭ Nesting...
         [yyyy-mm-dd HH-MM-SS.ffffff] WARN  │     B.
         [yyyy-mm-dd HH-MM-SS.ffffff] WARN  │     C.
-        [yyyy-mm-dd HH-MM-SS.ffffff] INFO  └ Nesting... Done.
+        [yyyy-mm-dd HH-MM-SS.ffffff] INFO  ╰ Nesting... Done.
 
     :param indent: the size of an indent that will be used when the
                     nesting level is increased (defaults to 4).
