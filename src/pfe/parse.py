@@ -5,7 +5,7 @@ Contains functions for constructing graphs from JSON files.
 import json
 from decimal import Decimal
 from pathlib import Path
-from typing import Optional, Callable, Union, Tuple, Any
+from typing import Optional, Callable, Union, Tuple, Any, Iterable
 
 import networkx as nx
 
@@ -109,8 +109,6 @@ def publications_from(paths: Union[str, list[str]],
     if isinstance(paths, (str, Path)):
         paths = [paths]
 
-    publications = []
-
     def appropriate(publication: dict) -> bool:
         # Skip publications that have 100 authors or more.
         # Refer to the documentation to see why this flag was introduced.
@@ -130,14 +128,14 @@ def publications_from(paths: Union[str, list[str]],
         log.info(f'Reading {magenta | quoted(path.name)}... [{i / len(paths) * 100:>5.1f}%]')
 
         with open(path, 'r') as file:
-            data = json.load(file)
+            publications = json.load(file)
 
-        publications += (x for x in data if appropriate(x))
+        for publication in publications:
+            if appropriate(publication):
+                yield publication
 
-    return publications
 
-
-def parse(publications: list[dict], into: Optional[nx.Graph] = None) -> nx.Graph:
+def parse(publications: Iterable[dict], into: Optional[nx.Graph] = None) -> nx.Graph:
     """Parses a collaboration network from JSON files and
     constructs a social collaboration graph.
 

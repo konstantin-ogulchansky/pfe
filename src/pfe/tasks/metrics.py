@@ -69,20 +69,17 @@ if __name__ == '__main__':
     log: Log = Pretty()
     log.info('Starting...')
 
-    # Read publications.
-    with log.info('Reading publications...'):
+    with log.info('Reading publications.'):
         publications = all_publications(between=(1990, 2018), log=log)
 
-    # Construct a graph.
-    with log.info('Constructing a graph...'):
+    with log.info('Constructing a graph.'):
         graph = parse(publications)
 
         log.info(f'Constructed a graph with '
                  f'{blue | graph.number_of_nodes()} nodes and '
                  f'{blue | graph.number_of_edges()} edges.')
 
-    # Compute the metrics.
-    with log.info('Computing the metrics...'):
+    with log.info('Computing the metrics.'):
         log.info('The number of authors:                   '
                  + str(blue | number_of_authors(publications)))
         log.info('The number of publications:              '

@@ -163,7 +163,6 @@ if __name__ == '__main__':
     log: Log = Pretty()
     log.info('Starting...')
 
-    # Construct a graph.
     with log.info('Reading a graph...'):
         graph = parse(publications_in('COMP', between=(1990, 2018), log=log))
 
@@ -171,11 +170,9 @@ if __name__ == '__main__':
                  f'{blue | graph.number_of_nodes()} nodes and '
                  f'{blue | graph.number_of_edges()} edges.')
 
-    # Compute the degree distribution.
     with log.info('Computing the degree distribution...'):
         original = degree_distribution(graph, weighted=True)
 
-    # Fit the hypothesis.
     with log.info('Fitting the hypothesis...'):
         fit = pl.Fit(list(original.sequence()), discrete=True)
 

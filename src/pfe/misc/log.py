@@ -4,52 +4,117 @@ Contains functions for logging.
 
 import sys
 from abc import ABCMeta, abstractmethod
-from contextlib import nullcontext, redirect_stdout, redirect_stderr
+from contextlib import redirect_stderr
 from datetime import datetime
 from io import StringIO
 from traceback import format_tb
 from types import TracebackType
-from typing import ContextManager, Any, IO, Type
+from typing import ContextManager, Any, IO, Type, Optional, Callable
 
 import colorama
 
-from pfe.misc.style import red, green, blue, yellow, gray, bold, StyledText
+from pfe.misc.style import red, green, blue, yellow, gray, bold
 
 
 class Log(metaclass=ABCMeta):
-    """An interface of all loggers.
+    """An interface of all loggers."""
 
-    Each of the methods return a context manager that can be used
-    to write nested logs. See, for example, `Pretty(Log)`.
-    """
+    class Record:
+        """A timestamped record to be logged by the logger.
 
-    def debug(self, text: Any) -> ContextManager:
+        :param tag: a tag of a record (e.g., 'info', 'warn', 'error', etc.).
+        :param item: an item to log (any object that can be converted to `str`).
+        """
+
+        def __init__(self, tag: str, item: Any, timestamp: Optional[datetime] = None):
+            self._tag = tag
+            self._item = item
+            self._timestamp = timestamp or datetime.now()
+
+        @property
+        def tag(self) -> Any:
+            """Returns the tag."""
+            return self._tag
+
+        @property
+        def item(self) -> Any:
+            """Returns the item."""
+            return self._item
+
+        @property
+        def timestamp(self) -> datetime:
+            """Returns the timestamp."""
+            return self._timestamp
+
+        def map(self, function: Callable) -> 'Log.Record':
+            """..."""
+            return type(self)(self._tag, function(self._item), self._timestamp)
+
+        def refreshed(self) -> 'Log.Record':
+            """Returns a new record with a refreshed timestamp."""
+            return type(self)(self._tag, self._item)
+
+    class Scope(metaclass=ABCMeta):
+        """..."""
+
+        def __init__(self):
+            self._done = None
+            self._error = None
+
+        def done(self, function: Callable[[str], Any]) -> 'Log.Scope':
+            """..."""
+
+            self._done = function
+            return self
+
+        def error(self, function: Callable) -> 'Log.Scope':
+            """..."""
+
+            self._error = function
+            return self
+
+        @abstractmethod
+        def __enter__(self):
+            """..."""
+
+        @abstractmethod
+        def __exit__(self,
+                     exc_type: Optional[Type[BaseException]],
+                     exc_val: Optional[BaseException],
+                     exc_tb: Optional[TracebackType]):
+            """..."""
+
+    def debug(self, item: Any) -> Scope:
         """Logs `text` with the 'DEBUG' tag."""
-        return self('DEBUG', text)
+        return self(self.Record('debug', item))
 
-    def info(self, text: Any) -> ContextManager:
+    def info(self, item: Any) -> Scope:
         """Logs `text` with the 'INFO' tag."""
-        return self('INFO', text)
+        return self(self.Record('info', item))
 
-    def warn(self, text: Any) -> ContextManager:
+    def warn(self, item: Any) -> Scope:
         """Logs `text` with the 'WARN' tag."""
-        return self('WARN', text)
+        return self(self.Record('warn', item))
 
-    def error(self, text: Any) -> ContextManager:
+    def error(self, item: Any) -> Scope:
         """Logs `text` with the 'ERROR' tag."""
-        return self('ERROR', text)
+        return self(self.Record('error', item))
 
     @abstractmethod
-    def __call__(self, tag: Any, text: Any) -> ContextManager:
+    def __call__(self, record: Record) -> Scope:
         """Logs the provided `text` with the specified `tag`."""
 
 
 class Nothing(Log):
     """Logs nothing (used to avoid `None` checks)."""
 
-    def __call__(self, tag: Any, text: Any) -> ContextManager:
+    class Scope(Log.Scope):
+        def __enter__(self): pass
+        def __exit__(self, *_: Any): pass
+
+    def __call__(self, record: Log.Record) -> Log.Scope:
         """Does literally nothing."""
-        return nullcontext()
+        return Nothing.Scope()
 
 
 class Pretty(Log):
@@ -58,151 +123,163 @@ class Pretty(Log):
     For example, the output of the following code
     ::
         log = Pretty()
-        log.debug('A.')
+        log.info('A.')
 
         with log.info('Nesting...'):
-            log.warn('B.')
-            log.warn('C.')
+            log.debug('B.')
+            log.error('C.')
 
     will be
     ::
-        [yyyy-mm-dd HH-MM-SS.ffffff] DEBUG   A.
+        [yyyy-mm-dd HH-MM-SS.ffffff] INFO    A.
         [yyyy-mm-dd HH-MM-SS.ffffff] INFO  ╭ Nesting...
-        [yyyy-mm-dd HH-MM-SS.ffffff] WARN  │     B.
-        [yyyy-mm-dd HH-MM-SS.ffffff] WARN  │     C.
+        [yyyy-mm-dd HH-MM-SS.ffffff] DEBUG │     B.
+        [yyyy-mm-dd HH-MM-SS.ffffff] ERROR │     C.
         [yyyy-mm-dd HH-MM-SS.ffffff] INFO  ╰ Nesting... Done.
 
-    :param indent: the size of an indent that will be used when the
-                    nesting level is increased (defaults to 4).
     :param out: a callable that will be used to write logs
                 (defaults to `print`).
+    :param hook: whether to hook exception handling
+                 and redirect it to the logger.
     """
 
-    # Justification width for tags.
-    TAG_WIDTH = 5
+    class Record(Log.Record):
 
-    # Symbols used to write nested logs.
-    NESTED_ENTER = str(gray('╭'))  # Another option: ┌
-    NESTED       = str(gray('│'))  # Another option: ├
-    NESTED_EXIT  = str(gray('╰'))  # Another option: └
+        TAGS = {
+            'debug': bold | green  | 'DEBUG',
+            'info':  bold | blue   | 'INFO ',
+            'warn':  bold | yellow | 'WARN ',
+            'error': bold | red    | 'ERROR',
+        }
 
-    class Record:
-        """A record to log."""
+        SCOPE = {
+            'enter': str(gray('╭')),  # Another option: ┌
+            'mid':   str(gray('│')),  # Another option: ├
+            'exit':  str(gray('╰')),  # Another option: └
+            'none':  ' '
+        }
 
-        def __init__(self, log: 'Pretty', tag: Any, text: Any):
-            self._log = log
-            self._tag = tag
-            self._text = text
-            self._timestamp = datetime.now()
+        INDENT = SCOPE['mid'] + '   '
 
-        def format(self, nesting: str = ' ') -> str:
-            """Formats a string to log."""
+        def format(self, nesting: int, scope: str = 'none') -> str:
+            """Formats the record as a string to log.
 
-            tag = self._tag
-            text = self._text
+            :param nesting: the nesting level of the record.
+            :param scope: the scope of the record ('enter', 'exit' or 'none').
 
-            if isinstance(tag, str):
-                tag = tag.ljust(Pretty.TAG_WIDTH)
-            if isinstance(tag, StyledText):
-                tag = tag.map(lambda x: x.ljust(Pretty.TAG_WIDTH))
+            :return: formatted record.
+            """
 
-            indent = Pretty.NESTED + ' ' * (self._log._indent - 1)
-            indent = indent * self._log._nesting
+            indent = self.INDENT * nesting
+            scope = self.SCOPE[scope]
+            tag = self.TAGS.get(self._tag, self._tag.upper())
 
-            return f'[{self._timestamp}] {tag} {indent}{nesting} {text}'
+            return f'[{self._timestamp}] {tag} {indent}{scope} {self._item}'
 
-        def refreshed(self) -> 'Pretty.Record':
-            """Returns a new record with a refreshed timestamp."""
-            return Pretty.Record(self._log, self._tag, self._text)
-
-    class Scope:
+    class Scope(Log.Scope):
         """Manages the scope of logs."""
 
         def __init__(self, log: 'Pretty', record: 'Pretty.Record'):
+            super(Log.Scope, self).__init__()
+
             self._log = log
             self._record = record
+
+            def done(record: str) -> Any:
+                return record + str(bold | f' Done.')
+
+            def error(record: str, exception: BaseException) -> Any:
+                return record + str(bold | f' Erred with `{red | type(exception).__name__}`.')
+
+            self._done = done
+            self._error = error
 
         def __enter__(self):
             """Increases the nesting level of the log."""
 
             record = self._record
+            nesting = self._log._nesting
 
             # Remove the last line.
-            self._log._out.write('\b' * len(record.format()))
-            self._log._out.write(record.format(Pretty.NESTED_ENTER))
+            self._log._out.write('\b' * len(record.format(nesting)))
+            self._log._out.write(record.format(nesting, scope='enter'))
 
-            self._log._nesting += 1
+            self._log.increase_nesting()
 
-        def __exit__(self, exc_type: Type[BaseException], exc_val: BaseException, exc_tb: TracebackType):
+        def __exit__(self, _: Type[BaseException], exception: BaseException, traceback: TracebackType):
             """Decreases the nesting level and prints the log."""
 
-            self._log._nesting -= 1
+            nesting = self._log.decrease_nesting()
 
-            if exc_type is None:
+            if exception is None:
                 record = self._record.refreshed()
+                record = record.map(self._done)
+
+                formatted = record.format(nesting, scope='exit')
 
                 self._log._out.write(self._log._newline)
-                self._log._out.write(record.format(Pretty.NESTED_EXIT)
-                                     + str(bold | ' Done.'))
+                self._log._out.write(formatted)
+
             else:
-                record = Pretty.Record(self._log, bold | red | 'ERROR', self._record._text)
+                record = Pretty.Record('error', self._record.item)
+                record = record.map(lambda x: self._error(x, exception))
+
+                formatted = record.format(nesting, scope='exit')
 
                 self._log._out.write(self._log._newline)
-                self._log._out.write(record.format(Pretty.NESTED_EXIT)
-                                     + str(bold | f' Erred with `{red | exc_type.__name__}`.'))
+                self._log._out.write(formatted)
 
-                tb = format_tb(exc_tb)
-                tb = '\n'.join(tb)
-                tb = str(red | tb)
-
-                self._log._out.write('\n\n')
-                self._log._out.write(tb)
-
-    def __init__(self, out: IO = sys.stdout, indent: int = 4, hook: bool = True):
-        if indent < 1:
-            raise ValueError(f'`indent` must be at least 1, got {indent}.')
-
+    def __init__(self, out: IO = sys.stdout, hook: bool = True):
         # For cross-platforming.
         colorama.init()
 
+        # Intercept exceptions and do not print them;
+        # they well be printed in `Scope.__exit__`.
+        if hook:
+            def hook(_: Type[BaseException], __: BaseException, traceback: TracebackType):
+                traceback = format_tb(traceback)
+                traceback = '\n'.join(traceback)
+                traceback = str(red | traceback)
+
+                self._out.write(self._newline * 2)
+                self._out.write(traceback)
+
+            sys.excepthook = hook
+
         self._out = out
-        self._indent = indent
         self._nesting = 0
         self._newline = ''
 
-        # Intercept exceptions and do not print them;
-        # they are printed in `Scope.__exit__`.
-        if hook:
-            sys.excepthook = lambda *args, **kwargs: ...
-
-    def debug(self, text: Any) -> ContextManager:
-        return self(bold | green | 'DEBUG', text)
-
-    def info(self, text: Any) -> ContextManager:
-        return self(bold | blue | 'INFO', text)
-
-    def warn(self, text: Any) -> ContextManager:
-        return self(bold | yellow | 'WARN', text)
-
-    def error(self, text: Any) -> ContextManager:
-        return self(bold | red | 'ERROR', text)
-
-    def __call__(self, tag: Any, text: Any) -> ContextManager:
+    def __call__(self, record: Record) -> Scope:
         """Logs the provided `text` with the specified `tag`,
         a timestamp and an indent."""
 
-        record = Pretty.Record(self, tag, text)
-
         self._out.write(self._newline)
-        self._out.write(record.format())
+        self._out.write(record.format(self._nesting))
 
         self._newline = '\n'
 
         return Pretty.Scope(self, record)
 
+    def increase_nesting(self):
+        """Increases the nesting level and returns it."""
+        self._nesting += 1
+        return self._nesting
 
-def redirect(out: str, to: Log) -> ContextManager:
-    """Redirects an IO as specified in `out` to the provided log."""
+    def decrease_nesting(self):
+        """Decreases the nesting level and returns it."""
+        self._nesting -= 1
+        return self._nesting
+
+
+def redirect_stderr_to(log: Log, map: Optional[Callable[[str], Any]] = None) -> ContextManager:
+    """Redirects the `stderr` stream to the provided log.
+
+    Only non-space strings are redirected to `log`.
+
+    :param log: ...
+    :param map: ...
+    """
 
     class EventIO(StringIO):
 
@@ -215,20 +292,12 @@ def redirect(out: str, to: Log) -> ContextManager:
             self._sub(__s)
             return result
 
-    import re
+    event = EventIO(lambda x: log.warn(map(x)) if not x.isspace() else ...)
 
-    event = EventIO(lambda x: to.warn(re.sub(r'\s*\n\s*', '  •  ', x)) if not x.isspace() else ...)
+    cx = redirect_stderr(event)
+    cx.__enter__()
 
-    if out == 'stdout':
-        cx = redirect_stdout(event)
-    if out == 'stderr':
-        cx = redirect_stderr(event)
-
-    try:
-        cx.__enter__()  # NOQA.
-        return cx
-    except NameError:
-        raise ValueError(f'Invalid `out` value: "{out}".')
+    return cx
 
 
 if __name__ == '__main__':
@@ -246,7 +315,8 @@ if __name__ == '__main__':
             pass
 
     with log.info('Fourth nesting...'):
-        log.debug('D.')
-        log.debug('E.')
+        log.info('D.')
+        raise ValueError()
+        log.info('E.')  # NOQA.
 
     log.info('Finished.')
