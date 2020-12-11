@@ -233,33 +233,13 @@ class Pretty(Log):
         # For cross-platforming.
         colorama.init()
 
-        # Intercept exceptions and do not print them;
-        # they well be printed in `Scope.__exit__`.
-        if hook:
-            def hook(type: Type[BaseException], exception: BaseException, traceback: TracebackType):
-                traceback = format_tb(traceback)
-                traceback = '\n'.join(traceback)
-                traceback = str(red | traceback)
-
-                # Print the title.
-                self._out.write(self._newline * 2)
-                self._out.write(str(red('Traceback:')))
-
-                # Print the traceback.
-                self._out.write(self._newline * 2)
-                self._out.write(traceback)
-
-                # Print the exception.
-                self._out.write(self._newline)
-                self._out.write(str(bold | red | type.__name__))
-                self._out.write(str(red(': ' + str(exception))))
-                self._out.write(self._newline)
-
-            sys.excepthook = hook
-
         self._out = out
         self._nesting = 0
         self._newline = ''
+
+        # Updated the default exception hook with `on_exception`.
+        if hook:
+            sys.excepthook = self.on_exception
 
     def __call__(self, record: Record) -> Scope:
         """Logs the provided `text` with the specified `tag`,
@@ -281,6 +261,27 @@ class Pretty(Log):
         """Decreases the nesting level and returns it."""
         self._nesting -= 1
         return self._nesting
+
+    def on_exception(self, type: Type[BaseException], exception: BaseException, traceback: TracebackType):
+        """A hook that is called on an exception."""
+
+        traceback = format_tb(traceback)
+        traceback = '\n'.join(traceback)
+        traceback = str(red | traceback)
+
+        # Print the title.
+        self._out.write(self._newline * 2)
+        self._out.write(str(red('Traceback:')))
+
+        # Print the traceback.
+        self._out.write(self._newline * 2)
+        self._out.write(traceback)
+
+        # Print the exception.
+        self._out.write(self._newline)
+        self._out.write(str(bold | red | type.__name__))
+        self._out.write(str(red(': ' + str(exception))))
+        self._out.write(self._newline)
 
 
 def redirect_stderr_to(log: Log, map: Optional[Callable[[str], Any]] = None) -> ContextManager:
