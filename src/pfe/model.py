@@ -24,8 +24,8 @@ class Parameters:
     :param pve: a probability to add a node + an edge.
     :param p: a (`d`-dimensional "square") matrix of collaborations.
     :param m: a vector of probability to belong to a community.
-    :param gamma: the probability to choose a node `u` is `deg(u) + gamma`.
-    :param distribution: the distribution to be used.
+    :param gamma: a probability to choose a node `u` is `deg(u) + gamma`.
+    :param distribution: a distribution of the cardinalities of hyperedges.
     """
 
     n0: int
