@@ -236,13 +236,24 @@ class Pretty(Log):
         # Intercept exceptions and do not print them;
         # they well be printed in `Scope.__exit__`.
         if hook:
-            def hook(_: Type[BaseException], __: BaseException, traceback: TracebackType):
+            def hook(type: Type[BaseException], exception: BaseException, traceback: TracebackType):
                 traceback = format_tb(traceback)
                 traceback = '\n'.join(traceback)
                 traceback = str(red | traceback)
 
+                # Print the title.
+                self._out.write(self._newline * 2)
+                self._out.write(str(red('Traceback:')))
+
+                # Print the traceback.
                 self._out.write(self._newline * 2)
                 self._out.write(traceback)
+
+                # Print the exception.
+                self._out.write(self._newline)
+                self._out.write(str(bold | red | type.__name__))
+                self._out.write(str(red(': ' + str(exception))))
+                self._out.write(self._newline)
 
             sys.excepthook = hook
 
@@ -316,7 +327,7 @@ if __name__ == '__main__':
 
     with log.info('Fourth nesting...'):
         log.info('D.')
-        raise ValueError()
+        raise ValueError('Whatever.')
         log.info('E.')  # NOQA.
 
     log.info('Finished.')
