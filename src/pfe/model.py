@@ -38,7 +38,7 @@ class Parameters:
     distribution: Callable[[], int]
 
     def __post_init__(self):
-        """Validate parameters of the model."""
+        """Validates parameters of the model."""
 
         self.p = np.asarray(self.p)
         self.m = np.asarray(self.m)
@@ -67,15 +67,23 @@ class Parameters:
 class Graph:
     """A (hyper)graph generated according to the model."""
 
-    def __init__(self, nodes, edges, d, e, v, q):
+    def __init__(self,
+                 nodes: list[list[int]],
+                 edges: list[list[int]],
+                 e: list[list[int]],
+                 v: list[list[int]],
+                 d: list[int],
+                 q: list[int]):
+        """Initialises the graph."""
+
         self.nodes = nodes
         self.edges = edges
 
         # What are these?
-        self.d = d
         self.e = e
-        self.v = v
-        self.q = q
+        self.v = v  # Why do we need it? It doesn't seem to be used when generating a graph.
+        self.d = d  # Degrees? This one is not used either.
+        self.q = q  # And this one...
 
     @classmethod
     def generate(cls, parameters: Parameters) -> 'Graph':
@@ -102,18 +110,21 @@ class Graph:
         nodes = [[] for _ in range(len(parameters.p))]
         edges = []
 
-        d = [0  for _ in range(parameters.n)]
-        v = [[] for _ in range(parameters.n)]
         e = [[] for _ in range(len(parameters.p))]
+        v = [[] for _ in range(parameters.n)]
+        d = [0  for _ in range(parameters.n)]
         q = []
 
         for node in range(parameters.n0):
+            # Assign nodes to communities in a cyclic manner,
+            # e.g., nodes will be assigned to 3 communities as
+            # 0 -> 0, 1 -> 1, 2 -> 2, 3 -> 0, 4 -> 1, etc.
             community = node % len(parameters.p)
 
             nodes[community].append(node)
             q.append(community)
 
-        return Graph(nodes, edges, d, e, v, q)
+        return Graph(nodes, edges, e=e, v=v, d=d, q=q)
 
     def number_of_nodes(self) -> int:
         """Returns the number of nodes in the graph."""
@@ -145,7 +156,7 @@ class Graph:
         q1, q2 = pair
         h1, h2 = parameters.distribution(), parameters.distribution()
 
-        def hyperedge(q: float, h: int) -> Iterable[int]:
+        def hyperedge(q: int, h: int) -> Iterable[int]:
             x = len(self.nodes[q])  # The number of nodes in the community `q`.
             y = len(self.e[q])      # The number of... something?
             p = parameters.gamma * x / (y + parameters.gamma * x)
