@@ -23,7 +23,7 @@ class Parameters:
     :param pv: a probability to add a node alone.
     :param pve: a probability to add a node + an edge.
     :param p: a (`d`-dimensional "square") matrix of collaborations.
-    :param m: a vector of probability to belong to a community.
+    :param m: a vector of probabilities to belong to a community.
     :param gamma: a probability to choose a node `u` is `deg(u) + gamma`.
     :param distribution: a distribution of the cardinalities of hyperedges.
     """
@@ -83,7 +83,7 @@ class Graph:
 
         graph = cls.initial(parameters)
 
-        while len(graph.q) < parameters.n:
+        while graph.number_of_nodes() < parameters.n:
             u = np.random.random()
 
             if u < parameters.pv:
@@ -114,6 +114,10 @@ class Graph:
             q.append(community)
 
         return Graph(nodes, edges, d, e, v, q)
+
+    def number_of_nodes(self) -> int:
+        """Returns the number of nodes in the graph."""
+        return len(self.q)
 
     def add_node(self, parameters: Parameters):
         """Adds a node to the graph."""
