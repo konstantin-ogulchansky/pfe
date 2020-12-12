@@ -4,7 +4,7 @@ Fit the degree distribution.
 
 import powerlaw as pl
 
-from pfe.misc.log import Log, Pretty, blue, redirect
+from pfe.misc.log import Log, Pretty, blue, redirect_stderr_to
 from pfe.misc.plot import Plot, crosses, circles
 from pfe.parse import parse, publications_in
 from pfe.tasks.hypothesis import degree_distribution
@@ -146,9 +146,9 @@ if __name__ == '__main__':
     log: Log = Pretty()
     log.info('Starting...')
 
-    redirect('stderr', to=log)
+    redirect_stderr_to(log)
 
-    with log.info('Reading a graph...'):
+    with log.info('Reading a graph.'):
         graph = parse(publications_in('COMP', between=(1990, 1992), log=log))
 
         log.info(f'Read a graph with '

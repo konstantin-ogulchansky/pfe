@@ -2,6 +2,7 @@
 Contains functions for logging.
 """
 
+import re
 import sys
 from abc import ABCMeta, abstractmethod
 from contextlib import redirect_stderr
@@ -79,9 +80,9 @@ class Log(metaclass=ABCMeta):
 
         @abstractmethod
         def __exit__(self,
-                     exc_type: Optional[Type[BaseException]],
-                     exc_val: Optional[BaseException],
-                     exc_tb: Optional[TracebackType]):
+                     type: Optional[Type[BaseException]],
+                     exception: Optional[BaseException],
+                     traceback: Optional[TracebackType]):
             """..."""
 
     def debug(self, item: Any) -> Scope:
@@ -156,7 +157,8 @@ class Pretty(Log):
             'enter': str(gray('╭')),  # Another option: ┌
             'mid':   str(gray('│')),  # Another option: ├
             'exit':  str(gray('╰')),  # Another option: └
-            'none':  ' '
+            'fill':  ' ',             # Another option: ─
+            'none':  ' ',
         }
 
         INDENT = SCOPE['mid'] + '   '
@@ -170,11 +172,21 @@ class Pretty(Log):
             :return: formatted record.
             """
 
-            indent = self.INDENT * nesting
-            scope = self.SCOPE[scope]
-            tag = self.TAGS.get(self._tag, self._tag.upper())
+            def length(string: str) -> int:
+                """Calculate the length of the string without ANSI codes."""
+                return len(re.sub(r'\033\[\d+m', '', string))
 
-            return f'[{self._timestamp}] {tag} {indent}{scope} {self._item}'
+            timestamp   = f'[{self._timestamp}]'
+            tag         = str(self.TAGS.get(self._tag, self._tag.upper()))
+            placeholder = \
+                self.SCOPE['fill'] * length(timestamp) \
+                + ' ' + ' ' * length(tag)
+
+            indent = self.INDENT * nesting
+            scope  = self.SCOPE[scope]
+            item   = str(self._item).replace('\n', f'\n{placeholder} {indent}  ')
+
+            return f'{timestamp} {tag} {indent}{scope} {item}'
 
     class Scope(Log.Scope):
         """Manages the scope of logs."""
@@ -206,7 +218,10 @@ class Pretty(Log):
 
             self._log.increase_nesting()
 
-        def __exit__(self, _: Type[BaseException], exception: BaseException, traceback: TracebackType):
+        def __exit__(self,
+                     type: Type[BaseException],
+                     exception: BaseException,
+                     traceback: TracebackType):
             """Decreases the nesting level and prints the log."""
 
             nesting = self._log.decrease_nesting()
@@ -254,15 +269,20 @@ class Pretty(Log):
 
     def increase_nesting(self):
         """Increases the nesting level and returns it."""
+
         self._nesting += 1
         return self._nesting
 
     def decrease_nesting(self):
         """Decreases the nesting level and returns it."""
+
         self._nesting -= 1
         return self._nesting
 
-    def on_exception(self, type: Type[BaseException], exception: BaseException, traceback: TracebackType):
+    def on_exception(self,
+                     type: Type[BaseException],
+                     exception: BaseException,
+                     traceback: TracebackType):
         """A hook that is called on an exception."""
 
         traceback = format_tb(traceback)
@@ -304,6 +324,9 @@ def redirect_stderr_to(log: Log, map: Optional[Callable[[str], Any]] = None) -> 
             self._sub(__s)
             return result
 
+    if map is None:
+        map = lambda x: x
+
     event = EventIO(lambda x: log.warn(map(x)) if not x.isspace() else ...)
 
     cx = redirect_stderr(event)
@@ -314,21 +337,21 @@ def redirect_stderr_to(log: Log, map: Optional[Callable[[str], Any]] = None) -> 
 
 if __name__ == '__main__':
     log: Log = Pretty()
-    log.debug('Starting...')
+    log.debug('Starting...\nYeah.')
 
     with log.info('First nesting...'):
         log.info('A.')
         log.info('B.')
 
         with log.warn('Second nesting...'):
-            log.error('C.')
+            log.error('C.\nD.\nE.\nF.')
 
         with log.info('Third nesting...'):
             pass
 
     with log.info('Fourth nesting...'):
-        log.info('D.')
+        log.info('G.\nH.\nI.')
         raise ValueError('Whatever.')
-        log.info('E.')  # NOQA.
+        log.info('J.')  # NOQA.
 
     log.info('Finished.')
