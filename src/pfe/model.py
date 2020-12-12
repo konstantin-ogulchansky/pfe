@@ -54,7 +54,7 @@ class Parameters:
             raise ValueError('`pve` must be in the range [0, 1].')
 
         # TODO: Ask.
-        # Is this a correct check to add?
+        # Is this a valid check to add?
         if self.pv + self.pve > 1:
             raise ValueError('`pv + pve` must be less than 1.')
 
@@ -186,12 +186,14 @@ class Graph:
         e2 = list(hyperedge(q2, h2))
 
         # TODO: Ask.
-        # Is it okay that `e1` and `e2` may contain duplicate nodes?
-        # For example,, we can obtain a hyperedge like [1, 2, 1, 3].
-        # This incorrectly affects the lists `v`, `d` and `e`, since the
-        # duplicate node will be updated twice in the following loops.
-        # For example, the degree of a node 1 will be updated twice,
-        # even though we add only a single hyperedge.
+        # - Is it okay that `e1` and `e2` may contain duplicate nodes?
+        #   For example,, we can obtain a hyperedge like [1, 2, 1, 3].
+        #   This incorrectly affects the lists `v`, `d` and `e`, since the
+        #   duplicate node will be updated twice in the following loops.
+        #   For example, the degree of a node 1 will be updated twice,
+        #   even though we add only a single hyperedge.
+        # - Is it okay that there is no check for duplicate edges?
+        #   What if we generate an edge [1, 2] twice?
         self.edges.append(e1 + e2)
 
         for u in e1:
