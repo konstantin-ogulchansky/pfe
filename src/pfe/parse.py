@@ -125,7 +125,7 @@ def publications_from(paths: Union[str, list[str]],
         return '"' + string + '"'
 
     for i, path in enumerate(paths, start=1):
-        log.info(f'Reading {magenta | quoted(path.name)}... [{i / len(paths) * 100:>5.1f}%]')
+        log.info(f'Reading {magenta | quoted(path.name)}. [{i / len(paths) * 100:>5.1f}%]')
 
         with open(path, 'r') as file:
             publications = json.load(file)

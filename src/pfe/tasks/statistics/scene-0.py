@@ -16,7 +16,8 @@ if __name__ == '__main__':
     log.info('Starting...')
 
     with log.info('Reading publications.'):
-        publications = all_publications(between=(1990, 2018), log=log)
+        # publications = list(all_publications(between=(1990, 2018), log=log))
+        publications = list(publications_in('COMP', between=(1990, 1996), log=log))
 
     with log.info('Constructing a graph.'):
         graph = parse(publications)
