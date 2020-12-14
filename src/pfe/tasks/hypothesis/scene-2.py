@@ -75,8 +75,9 @@ if __name__ == '__main__':
         log.info(itemize(bold | 'Observed:', obs))
         log.info(itemize(bold | 'Expected:', exp))
 
-        # This one gives pretty good results.
-        bins = [2, 64, 69, 226, 482]  # These bins were calculated with brute force.
+        # These bins give pretty good results.
+        # These bins were calculated with brute force.
+        bins = [2, 64, 69, 226, 482]
         bin_obs = histogram(obs, bins)
         bin_exp = histogram(exp, bins)
 
