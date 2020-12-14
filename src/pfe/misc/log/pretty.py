@@ -62,6 +62,7 @@ class Pretty(core.Log):
 
     def level(self, *, min: Optional[core.Level] = None, enabled: Optional[Iterable[core.Level]] = None):
         """..."""
+        # TODO: Add scoped level?
 
         levels = list(core.Level)
 

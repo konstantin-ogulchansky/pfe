@@ -13,23 +13,19 @@ In order to test the hypothesis, 3 steps should be taken:
      For example, we could compare 'power-law' and 'lognormal' distributions
      (and, of course, other distributions).
 
-  4. Test the hypothesis via K-S test.
-
-TODO:
-  - Check regular data?
-  - Check binned data?
+  4. Test the hypothesis via the K-S test or the Pearson's chi-square test.
+     - Test regular data?
+     - Test binned data?
 """
 
 import random
 from decimal import Decimal
-from math import floor
-from typing import Iterable, Tuple, Any
+from typing import Iterable, Sequence
 
 import networkx as nx
-import powerlaw as pl
 
 from pfe.tasks.statistics import Statistic
-from pfe.misc.log import Log, Nothing, Pretty, blue
+from pfe.misc.log import Log, Nothing
 
 
 def degree_distribution(graph: nx.Graph, weighted: bool = False) -> Statistic:
@@ -38,9 +34,9 @@ def degree_distribution(graph: nx.Graph, weighted: bool = False) -> Statistic:
     :param graph: a `networkx.Graph`.
     :param weighted: whether the degree distribution should be weighted.
 
-    :returns: a dictionary representing the distribution,
-              where key is a degree and a value is the number
-              of times this degree is found in the graph.
+    :return: a dictionary representing the distribution,
+             where key is a degree and a value is the number
+             of times this degree is found in the graph.
     """
 
     distribution = {}
@@ -63,20 +59,23 @@ def degree_distribution(graph: nx.Graph, weighted: bool = False) -> Statistic:
     return Statistic(distribution)
 
 
-def sample(cdf: dict[int, float], size: int, log: Log = Nothing()) -> Iterable[int]:
-    """Draws a sample of the provided `size` according to `cdf`.
+def sample(pdf: dict[int, float],
+           size: int,
+           resample: bool = False,
+           log: Log = Nothing()) -> Iterable[int]:
+    """Draws a sample of the provided ``size`` according to ``pdf``.
 
     This function implements the inverse transform sampling for drawing a sample
-    according to an arbitrary distribution, defined by the provided CDF.
+    according to an arbitrary distribution, defined by the provided PDF.
 
     Example:
     ::
-        x = list(range(x_min, x_max + 1))
-        y = fit.truncated_power_law.cdf(x)
+        x = list(sorted(truncated.keys()))
+        y = fit.truncated_power_law.pdf(x)
 
-        cdf = dict(zip(x, y))
+        pdf = dict(zip(x, y))
 
-        sampled = sample(cdf, size=1000)
+        sampled = sample(pdf, size=1000, resample=True)
         sampled = Statistic(Counter(sampled))
 
     .. [1] Wikipedia,
@@ -86,31 +85,78 @@ def sample(cdf: dict[int, float], size: int, log: Log = Nothing()) -> Iterable[i
        https://stephens999.github.io/fiveMinuteStats/inverse_transform_sampling.html
     """
 
-    x = list(sorted(cdf.keys()))
+    x = list(sorted(pdf.keys()))
 
     def draw(i: int) -> int:
         u = random.uniform(0, 1)
         p = 0
 
-        log.info(f'Sampling {i}/{size} with `u` = {u}.')
+        log.info(f'Sampling {i}/{size} [{i / size * 100:>5.1f}%] with `u` = {u}.')
 
-        for i in range(len(x)):
-            q = cdf[x[i]]
+        for j in range(len(x)):
+            q = p + pdf[x[j]]
 
             if p <= u < q:
-                return x[i]
+                return x[j]
             else:
                 p = q
 
-        log.error(f'The value for `u` = {u} was not found; returning {(m := max(x))}.')
+        if resample:
+            log.warn(f'The value for `u` = {u} was not found; '
+                     f'resampling.')
+            return draw(i)
+        else:
+            log.error(f'The value for `u` = {u} was not found; '
+                      f'returning {(m := max(x))}.')
+            return m
 
-        return m
+    return (draw(i) for i in range(1, size + 1))
 
-    return (draw(i) for i in range(size))
+
+def histogram(data: dict[int, float], bins: Sequence[float]) -> list[float]:
+    """...
+
+    An example.
+    ::
+        obs = ...  # Observed values.
+        exp = ...  # Expected values.
+
+        bins = np.linspace(min(obs), max(obs))
+        bins = np.logspace(log(min(obs), 10), log(max(obs), 10))
+
+        bin_obs = histogram(obs, bins)
+        bin_exp = histogram(exp, bins)
+
+        chi = st.chisquare(bin_obs, bin_exp, ddof=1)
+    """
+
+    binned = []
+
+    for i in range(len(bins) - 1):
+        x_min = bins[i]
+        x_max = bins[i + 1]
+
+        if i < len(bins) - 2:
+            within = lambda x: x_min <= x < x_max
+        else:
+            within = lambda x: x_min <= x <= x_max
+
+        binned.append(sum(data[x] for x in data if within(x)))
+
+    return binned
 
 
 def chi_squared(observed: dict[int, int], expected: dict[int, float]) -> float:
-    """..."""
+    """...
+
+    Should rather refer to ``scipy.stats.chisquare``.
+
+    .. [1] Wikipedia,
+       https://www.wikiwand.com/en/Pearson%27s_chi-squared_test
+
+    .. [2] "Chi-Square Goodness-of-Fit Test",
+       https://www.itl.nist.gov/div898/handbook/eda/section3/eda35f.htm
+    """
 
     x_min = min(expected.keys())
     x_max = max(expected.keys())
@@ -126,78 +172,3 @@ def chi_squared(observed: dict[int, int], expected: dict[int, float]) -> float:
         return (n_i - p_i) ** 2 / p_i
 
     return n * sum(map(term, expected.keys()))
-
-
-def bins(obs: dict[int, int], exp: dict[int, float], amount: int) \
-        -> Tuple[dict[int, int], dict[int, float]]:
-    """..."""
-
-    x_min = min(exp)
-    x_max = max(exp)
-    width = floor((x_max - x_min + 1) / amount)
-
-    new_obs = {}
-    new_exp = {}
-
-    x = x_min
-    while x <= x_max:
-        new_obs[x] = sum(obs.get(x + d, 0) for d in range(width))
-        new_exp[x] = sum(exp.get(x + d, 0) for d in range(width))
-
-        x += width
-
-    return new_obs, new_exp
-
-
-def normalized(dictionary: dict[Any, int]) -> dict[Any, int]:
-    """..."""
-
-    total = sum(dictionary.values())
-
-    return {x: y / total for x, y in dictionary.items()}
-
-
-if __name__ == '__main__':
-    from pfe.parse import parse, publications_in
-
-    log: Log = Pretty()
-    log.info('Starting...')
-
-    with log.info('Reading a graph...'):
-        graph = parse(publications_in('COMP', between=(1990, 2018), log=log))
-
-        log.info(f'Read a graph with '
-                 f'{blue | graph.number_of_nodes()} nodes and '
-                 f'{blue | graph.number_of_edges()} edges.')
-
-    with log.info('Computing the degree distribution...'):
-        original = degree_distribution(graph, weighted=True)
-
-    with log.info('Fitting the hypothesis...'):
-        fit = pl.Fit(list(original.sequence()), discrete=True)
-
-    x_min = int(fit.xmin or original.min())
-    x_max = int(fit.xmax or original.max())
-
-    truncated = original.truncate(x_min, x_max)
-
-    # x = list(sorted(truncated.keys()))
-    x = list(range(x_min, x_max + 1))
-
-    cdf = dict(zip(x, fit.truncated_power_law.cdf(x)))
-    pdf = dict(zip(x, fit.truncated_power_law.pdf(x)))
-
-    obs = {k: truncated[k] for k in sorted(truncated)}
-    exp = pdf
-
-    bin_obs, bin_exp = \
-        bins(obs, exp, amount=21)
-
-    statistic = chi_squared(bin_obs, bin_exp)
-
-    print(f'Chi-squared statistic with {len(bin_exp)} bins:', statistic)
-
-    print()
-    for amount in range(2, 100):
-        print(f'{amount:>3} bins:', chi_squared(*bins(obs, exp, amount)))
-    print()

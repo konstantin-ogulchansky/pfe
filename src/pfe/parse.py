@@ -20,7 +20,7 @@ def all_publications(between: Tuple[int, int],
     :param between: a tuple of two integers that specifies the (inclusive) year range.
     :param kwargs: `**kwargs` to pass to `publications_in`.
 
-    :returns: a list of publications.
+    :return: a list of publications.
     """
 
     directory = Path.cwd()
@@ -67,7 +67,7 @@ def publications_in(*domains: str,
     :param between: a tuple of two integers that specifies the (inclusive) year range.
     :param kwargs: `**kwargs` to pass to `publications_from`.
 
-    :returns: a list of publications.
+    :return: a list of publications.
     """
 
     directory = Path.cwd()
@@ -103,7 +103,7 @@ def publications_from(paths: Union[str, list[str]],
     :param where: a predicate to filter parsed publications.
     :param log: an instance of `Log` to log steps of the execution with.
 
-    :returns: a list of publications.
+    :return: a list of publications.
     """
 
     if isinstance(paths, (str, Path)):
@@ -142,7 +142,7 @@ def parse(publications: Iterable[dict], into: Optional[nx.Graph] = None) -> nx.G
     :param publications: publications represented as dictionaries with JSON.
     :param into: a graph to add parsed nodes and edges into (optional).
 
-    :returns: a constructed social collaboration graph.
+    :return: a constructed social collaboration graph.
     """
 
     def unique(items: list, select: Callable) -> list:
@@ -199,12 +199,13 @@ def parse(publications: Iterable[dict], into: Optional[nx.Graph] = None) -> nx.G
 
 
 if __name__ == '__main__':
-    from pfe.misc.log import Pretty, blue
+    from pfe.misc.log import Pretty
+    from pfe.misc.style import blue
 
     log: Log = Pretty()
     log.info('Starting...')
 
-    with log.info('Reading a graph...'):
+    with log.info('Reading a graph.'):
         graph = parse(publications_in('COMP', between=(1990, 1996), log=log))
 
         log.info(f'Read a graph with '

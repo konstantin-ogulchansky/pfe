@@ -39,9 +39,13 @@ class Statistic:
         """Returns values of the distribution."""
         return self._p.items()
 
-    def pop(self, key) -> int:
+    def get(self, item: int, default: int) -> int:
+        """Returns either value by key or the default value."""
+        return self._p.get(item, default)
+
+    def pop(self, item: int) -> int:
         """Removes a value by the specified key."""
-        return self._p.pop(key)
+        return self._p.pop(item)
 
     def cdf(self, inclusive: bool = False) -> dict[int, float]:
         """Computes the cumulative distribution function."""
