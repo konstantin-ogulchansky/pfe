@@ -24,6 +24,7 @@ from typing import Iterable, Sequence
 
 import networkx as nx
 
+from pfe.misc.log.format import percents
 from pfe.tasks.statistics import Statistic
 from pfe.misc.log import Log, Nothing
 
@@ -91,7 +92,7 @@ def sample(pdf: dict[int, float],
         u = random.uniform(0, 1)
         p = 0
 
-        log.info(f'Sampling {i}/{size} [{i / size * 100:>5.1f}%] with `u` = {u}.')
+        log.info(f'Sampling {i}/{size} [{percents(i, size)}] with `u` = {u}.')
 
         for j in range(len(x)):
             q = p + pdf[x[j]]

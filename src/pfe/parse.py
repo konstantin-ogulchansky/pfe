@@ -10,6 +10,7 @@ from typing import Optional, Callable, Union, Tuple, Any, Iterable
 import networkx as nx
 
 from pfe.misc.log import Log, Nothing
+from pfe.misc.log.format import percents
 from pfe.misc.style import magenta
 
 
@@ -125,7 +126,7 @@ def publications_from(paths: Union[str, list[str]],
         return '"' + string + '"'
 
     for i, path in enumerate(paths, start=1):
-        log.info(f'Reading {magenta | quoted(path.name)}. [{i / len(paths) * 100:>5.1f}%]')
+        log.info(f'Reading {magenta | quoted(path.name)}. [{percents(i, len(paths))}]')
 
         with open(path, 'r') as file:
             publications = json.load(file)
@@ -138,6 +139,10 @@ def publications_from(paths: Union[str, list[str]],
 def parse(publications: Iterable[dict], into: Optional[nx.Graph] = None) -> nx.Graph:
     """Parses a collaboration network from JSON files and
     constructs a social collaboration graph.
+
+    TODO:
+        - Describe how publications are parsed.
+        - Describe how attributes are assigned.
 
     :param publications: publications represented as dictionaries with JSON.
     :param into: a graph to add parsed nodes and edges into (optional).
