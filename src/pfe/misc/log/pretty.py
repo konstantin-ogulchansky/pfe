@@ -1,5 +1,6 @@
 import re
 import sys
+from time import sleep
 from traceback import format_tb
 from types import TracebackType
 from typing import Optional, Type, IO, Iterable, Callable
@@ -165,9 +166,9 @@ class Format:
         }
 
         self._scope = {
-            'enter': str(gray('╭')),
-            'mid':   str(gray('│')),
-            'exit':  str(gray('╰')),
+            'enter': gray | '╭',
+            'mid':   gray | '│',
+            'exit':  gray | '╰',
         }
 
         self._indent = 4
@@ -191,12 +192,12 @@ class Format:
         level       = self._levels.get(record.level, record.level.name.upper())
         prefix      = f'{timestamp}{separator}{level}{separator}  '
         placeholder = ' ' * len(clear(prefix))
-        indent      = (self._scope['mid'] + ' ' * (self._indent - 1)) * nesting
-        scope       = self._scope.get(scope, ' ')
+        indent      = (str(self._scope['mid']) + ' ' * (self._indent - 1)) * nesting
+        scope       = str(self._scope.get(scope, ' ')) + ' '
 
         item = str(record.item).replace('\n', f'\n{placeholder}{indent}  ')
 
-        return f'{prefix}{indent}{scope} {item}'
+        return f'{prefix}{indent}{scope}{item}'
 
 
 class Scope(core.Scope):
@@ -234,12 +235,11 @@ class Scope(core.Scope):
         format = self._log.format
 
         if exception is None:
-            record = self._record.refreshed()
-            record = record.map(lambda x: x + str(bold | ' Done.'))
+            record = core.Record(str(bold | 'Done '), self._record.level)
+            record = record.map(lambda x: x + f'in {(record.timestamp - self._record.timestamp).total_seconds()}s.')
         else:
-            record = core.Record(self._record.item, core.Level.ERROR)
-            record = record.map(lambda x: x + f' {red | bold | type.__name__}'
-                                              f'{red | ": " + str(exception)}')
+            record = core.Record(f'{red | bold | type.__name__}'
+                                 f'{red | ": " + str(exception)}', core.Level.ERROR)
 
         record = format(record, nesting, scope='exit')
 
@@ -257,9 +257,10 @@ if __name__ == '__main__':
 
         with log.warn('Second nesting...'):
             log.error('C.\nD.\nE.')
+            sleep(0.1)
 
         with log.info('Third nesting...'):
-            pass
+            sleep(0.2)
 
     try:
         with log.info('Fourth nesting...'):
