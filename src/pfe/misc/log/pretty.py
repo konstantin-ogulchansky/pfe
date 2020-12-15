@@ -5,9 +5,9 @@ from types import TracebackType
 from typing import Optional, Type, IO, Iterable, Callable
 
 import colorama
-from pygments import highlight
-from pygments.lexers import PythonLexer  # NOQA.
-from pygments.formatters import TerminalFormatter  # NOQA.
+import pygments
+import pygments.lexers
+import pygments.formatters
 
 from pfe.misc.log import core, nothing
 from pfe.misc.style import bold, green, blue, yellow, red, gray
@@ -27,11 +27,11 @@ class Pretty(core.Log):
 
     will be
     ::
-        [yyyy-mm-dd HH-MM-SS.ffffff] INFO    A.
-        [yyyy-mm-dd HH-MM-SS.ffffff] INFO  ╭ Nesting...
-        [yyyy-mm-dd HH-MM-SS.ffffff] DEBUG │     B.
-        [yyyy-mm-dd HH-MM-SS.ffffff] ERROR │     C.
-        [yyyy-mm-dd HH-MM-SS.ffffff] INFO  ╰ Nesting... Done.
+        yyyy-mm-dd HH-MM-SS.ffffff INFO      A.
+        yyyy-mm-dd HH-MM-SS.ffffff INFO    ╭ Nesting...
+        yyyy-mm-dd HH-MM-SS.ffffff DEBUG   │     B.
+        yyyy-mm-dd HH-MM-SS.ffffff ERROR   │     C.
+        yyyy-mm-dd HH-MM-SS.ffffff INFO    ╰ Nesting... Done.
 
     :param out: a callable that will be used to write logs
                 (defaults to `print`).
@@ -119,15 +119,24 @@ class Pretty(core.Log):
                      traceback: TracebackType):
         """A hook that is called on an exception."""
 
+        def highlight(code):
+            lexer = pygments.lexers.PythonLexer()
+            formatter = pygments.formatters.TerminalFormatter()
+
+            return pygments.highlight(code, lexer, formatter)
+
         def form(line):
             header, code = line.split('\n', 1)
 
-            return header + '\n' + highlight(code, PythonLexer(), TerminalFormatter())
+            return header + '\n' + highlight(code)
 
         traceback = format_tb(traceback)
         traceback = map(form, traceback)
         traceback = '\n'.join(traceback)
         traceback = str(red | traceback)
+
+        exception = repr(exception.args)
+        exception = exception.strip('(,)')
 
         # Print the title.
         self._out.write('\n\n')
@@ -139,8 +148,8 @@ class Pretty(core.Log):
 
         # Print the exception.
         self._out.write('\n')
-        self._out.write(str(bold | red | type.__name__))
-        self._out.write(str(red(': ' + str(exception))))
+        self._out.write(str(bold | highlight(type.__name__).rstrip('\n')))
+        self._out.write(': ' + highlight(exception))
         self._out.write('\n')
 
 
@@ -177,15 +186,17 @@ class Format:
             """Removes ANSI codes from the string."""
             return re.sub(r'\033\[\d+m', '', string)
 
-        timestamp   = f'[{record.timestamp}]'
+        timestamp   = f'{record.timestamp}'
+        separator   = ' '
         level       = self._levels.get(record.level, record.level.name.upper())
-        placeholder = ' ' * len(clear(f'{timestamp} {level} '))
+        prefix      = f'{timestamp}{separator}{level}{separator}  '
+        placeholder = ' ' * len(clear(prefix))
         indent      = (self._scope['mid'] + ' ' * (self._indent - 1)) * nesting
         scope       = self._scope.get(scope, ' ')
 
-        item = str(record.item).replace('\n', f'\n{placeholder} {indent}  ')
+        item = str(record.item).replace('\n', f'\n{placeholder}{indent}  ')
 
-        return f'{timestamp} {level}  {indent}{scope} {item}'
+        return f'{prefix}{indent}{scope} {item}'
 
 
 class Scope(core.Scope):
@@ -257,6 +268,6 @@ if __name__ == '__main__':
     except ValueError:
         log.info("It's okay.")
 
-    raise ValueError('Again?')
+    raise ValueError('Again?', 451)
 
     log.info('Finished.')  # NOQA.
