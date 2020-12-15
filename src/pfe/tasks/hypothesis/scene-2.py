@@ -9,7 +9,7 @@ import scipy.stats as st
 import numpy as np
 
 from pfe.misc.log import Log, Pretty, redirect_stderr_to
-from pfe.misc.log.format import itemize
+from pfe.misc.log.misc import itemize
 from pfe.misc.plot import Plot
 from pfe.misc.style import blue, underlined, bold
 from pfe.parse import parse, publications_in

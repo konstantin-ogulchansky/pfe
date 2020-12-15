@@ -2,9 +2,12 @@ import re
 import sys
 from traceback import format_tb
 from types import TracebackType
-from typing import Optional, Type, IO, Iterable
+from typing import Optional, Type, IO, Iterable, Callable
 
 import colorama
+from pygments import highlight
+from pygments.lexers import PythonLexer  # NOQA.
+from pygments.formatters import TerminalFormatter  # NOQA.
 
 from pfe.misc.log import core, nothing
 from pfe.misc.style import bold, green, blue, yellow, red, gray
@@ -32,33 +35,34 @@ class Pretty(core.Log):
 
     :param out: a callable that will be used to write logs
                 (defaults to `print`).
-    :param style: an (optional) instance of ``Style`` that
-                  will be used to format logs.
+    :param format: an (optional) instance of ``Format`` that
+                   will be used to format logs.
     :param hook: whether to hook exception handling
                  and redirect it to the logger.
     """
 
     def __init__(self,
                  out: IO = sys.stdout,
-                 style: Optional['Style'] = None,
+                 format: Optional['Format'] = None,
                  hook: bool = True):
         # For cross-platforming.
         colorama.init()
 
         self._out = out
-        self._style = style or Style()
+        self._format = format or Format()
         self._levels = list(core.Level)
         self._nesting = 0
         self._newline = False
+        self._filters = []
 
         # Updated the default exception hook with `on_exception`.
         if hook:
             sys.excepthook = self.on_exception
 
     @property
-    def style(self) -> 'Style':
+    def format(self) -> 'Format':
         """Returns the style that is used to format logs."""
-        return self._style
+        return self._format
 
     def level(self, *, min: Optional[core.Level] = None, enabled: Optional[Iterable[core.Level]] = None):
         """..."""
@@ -73,6 +77,10 @@ class Pretty(core.Log):
 
         self._levels = levels
 
+    def filter(self, predicate: Callable[[core.Record], bool]):
+        """..."""
+        self._filters.append(predicate)
+
     def __call__(self, record: core.Record) -> 'Scope':
         """Logs the provided `text` with the specified `tag`,
         a timestamp and an indent."""
@@ -82,8 +90,12 @@ class Pretty(core.Log):
         if record.level not in self._levels:
             return nothing.Scope()
 
+        # Ignore records that do not match some filter.
+        if any(not f(record) for f in self._filters):
+            return nothing.Scope()
+
         self._out.write('\n' * self._newline)
-        self._out.write(self.style.format(record, self._nesting))
+        self._out.write(self.format(record, self._nesting))
 
         self._newline = True
 
@@ -107,7 +119,13 @@ class Pretty(core.Log):
                      traceback: TracebackType):
         """A hook that is called on an exception."""
 
+        def form(line):
+            header, code = line.split('\n', 1)
+
+            return header + '\n' + highlight(code, PythonLexer(), TerminalFormatter())
+
         traceback = format_tb(traceback)
+        traceback = map(form, traceback)
         traceback = '\n'.join(traceback)
         traceback = str(red | traceback)
 
@@ -126,8 +144,8 @@ class Pretty(core.Log):
         self._out.write('\n')
 
 
-class Style:
-    """Defines the style of records."""
+class Format:
+    """Defines the format of records."""
 
     def __init__(self):
         self._levels = {
@@ -145,7 +163,7 @@ class Style:
 
         self._indent = 4
 
-    def format(self, record: core.Record, nesting: int, scope: Optional[str] = None) -> str:
+    def __call__(self, record: core.Record, nesting: int, scope: Optional[str] = None) -> str:
         """Formats the record as a string to log.
 
         :param record: the record to format.
@@ -161,13 +179,13 @@ class Style:
 
         timestamp   = f'[{record.timestamp}]'
         level       = self._levels.get(record.level, record.level.name.upper())
-        placeholder = ' ' * len(clear(f'{timestamp} {level}'))
+        placeholder = ' ' * len(clear(f'{timestamp} {level} '))
         indent      = (self._scope['mid'] + ' ' * (self._indent - 1)) * nesting
         scope       = self._scope.get(scope, ' ')
 
         item = str(record.item).replace('\n', f'\n{placeholder} {indent}  ')
 
-        return f'{timestamp} {level} {indent}{scope} {item}'
+        return f'{timestamp} {level}  {indent}{scope} {item}'
 
 
 class Scope(core.Scope):
@@ -182,12 +200,12 @@ class Scope(core.Scope):
     def __enter__(self):
         """Increases the nesting level of the log."""
 
-        style = self._log.style
+        format = self._log.format
         record = self._record
         nesting = self._log._nesting  # NOQA.
 
-        old_record = style.format(record, nesting)
-        new_record = style.format(record, nesting, scope='enter')
+        old_record = format(record, nesting)
+        new_record = format(record, nesting, scope='enter')
 
         # Remove the old record and replace it with the new one.
         self._log._out.write('\b' * len(old_record))  # NOQA.
@@ -202,7 +220,7 @@ class Scope(core.Scope):
         """Decreases the nesting level and prints the log."""
 
         nesting = self._log.decrease_nesting()
-        style = self._log.style
+        format = self._log.format
 
         if exception is None:
             record = self._record.refreshed()
@@ -212,7 +230,7 @@ class Scope(core.Scope):
             record = record.map(lambda x: x + f' {red | bold | type.__name__}'
                                               f'{red | ": " + str(exception)}')
 
-        record = style.format(record, nesting, scope='exit')
+        record = format(record, nesting, scope='exit')
 
         self._log._out.write('\n')    # NOQA.
         self._log._out.write(record)  # NOQA.
@@ -236,8 +254,9 @@ if __name__ == '__main__':
         with log.info('Fourth nesting...'):
             log.info('F.\nG.')
             raise ValueError('Whatever.')
-            log.info('H.')  # NOQA.
     except ValueError:
         log.info("It's okay.")
 
-    log.info('Finished.')
+    raise ValueError('Again?')
+
+    log.info('Finished.')  # NOQA.

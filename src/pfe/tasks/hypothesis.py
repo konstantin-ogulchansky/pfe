@@ -24,7 +24,7 @@ from typing import Iterable, Sequence
 
 import networkx as nx
 
-from pfe.misc.log.format import percents
+from pfe.misc.log.misc import percents
 from pfe.tasks.statistics import Statistic
 from pfe.misc.log import Log, Nothing
 
@@ -63,6 +63,7 @@ def degree_distribution(graph: nx.Graph, weighted: bool = False) -> Statistic:
 def sample(pdf: dict[int, float],
            size: int,
            resample: bool = False,
+           error: bool = False,
            log: Log = Nothing()) -> Iterable[int]:
     """Draws a sample of the provided ``size`` according to ``pdf``.
 
@@ -106,9 +107,15 @@ def sample(pdf: dict[int, float],
             log.warn(f'The value for `u` = {u} was not found; '
                      f'resampling.')
             return draw(i)
+
+        message = \
+            f'The value for `u` = {u} was not found; ' \
+            f'returning {(m := max(x))}.'
+
+        if error:
+            raise ValueError(message)
         else:
-            log.error(f'The value for `u` = {u} was not found; '
-                      f'returning {(m := max(x))}.')
+            log.error(message)
             return m
 
     return (draw(i) for i in range(1, size + 1))

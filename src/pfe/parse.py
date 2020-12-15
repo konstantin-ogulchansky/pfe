@@ -10,7 +10,7 @@ from typing import Optional, Callable, Union, Tuple, Any, Iterable
 import networkx as nx
 
 from pfe.misc.log import Log, Nothing
-from pfe.misc.log.format import percents
+from pfe.misc.log.misc import percents
 from pfe.misc.style import magenta
 
 
