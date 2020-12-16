@@ -11,7 +11,7 @@ from matplotlib import pyplot as plt
 import time
 from numpy import random
 from scipy.optimize import curve_fit
-import Graph_study as gs
+# import Graph_study as gs
 
 
 def proba_rand(b, e, nodes_by_communities, q):
@@ -392,4 +392,25 @@ def Dynamic_Community_with_cliques(n0, pv, pve, M, P, gamma, N, distrib='Gaussia
 #
 # =============================================================================
 
+if __name__ == '__main__':
+    generated = Dynamic_Community_with_cliques(
+        n0=10,
+        N=10 ** 3,
+        pv=0.3,
+        pve=0.0,
+        P=[[0.25, 0.25],
+           [0.25, 0.25]],
+        M=[0.5, 0.5],
+        gamma=20,
+        distrib='Gaussian',
+        moy=1,
+        ecart_type=0,
+    )
 
+    keys = [
+        'nodes', 'Q', 'vlist', 'd', 'edges'
+    ]
+
+    print('Generated.')
+    for key, value in zip(keys, generated):
+        print(f'  {key + ":":<7} {value}')

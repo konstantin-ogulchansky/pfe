@@ -1,11 +1,11 @@
-from types import TracebackType
-from typing import Type, Optional
+from contextlib import nullcontext
+from typing import Union, Any, ContextManager
 
-from pfe.misc.log import core
+from pfe.misc.log.core import Log, Record
 
 
-class Nothing(core.Log):
-    """Does nothing.
+class Nothing(Log):
+    """Logs nothing.
 
     This ``Log`` can be used in order to avoid checks for ``None``.
     For example,
@@ -22,23 +22,19 @@ class Nothing(core.Log):
     logged.
     """
 
-    def __call__(self, record: core.Record) -> core.Scope:
-        """Does literally nothing and returns an empty ``Scope``."""
-        return Scope()
+    class Scope(Log.Scope):
+        """An empty scope that does not do anything
+        neither in ``__enter__`` nor in ``__exit__``"""
 
+        def __call__(self, item: Union[Any, Record]) -> ContextManager:
+            return nullcontext()
 
-class Scope(core.Scope):
-    """An empty scope that does not do anything
-    neither in ``__enter__`` nor in ``__exit__``"""
+    @property
+    def scope(self) -> Log.Scope:
+        return Nothing.Scope()
 
-    def __enter__(self):
-        pass
-
-    def __exit__(self,
-                 type: Optional[Type[BaseException]],
-                 exception: Optional[BaseException],
-                 traceback: TracebackType):
-        pass
+    def __call__(self, item: Union[Any, Record]):
+        """Does nothing."""
 
 
 if __name__ == '__main__':
@@ -46,6 +42,6 @@ if __name__ == '__main__':
     log = Nothing()
     log.debug('[1]')
 
-    with log.error('[2]'):
+    with log.scope.error('[2]'):
         log.info('[3]')
         log.warn('[4]')

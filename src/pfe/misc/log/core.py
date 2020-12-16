@@ -1,36 +1,88 @@
 from abc import ABCMeta, abstractmethod
 from datetime import datetime
 from enum import Enum
-from types import TracebackType
-from typing import Any, Type, Optional, Callable
+from typing import Any, Optional, Callable, Union, ContextManager
 
 
 class Log(metaclass=ABCMeta):
     """An interface of all loggers."""
 
-    def debug(self, item: Any) -> 'Scope':
+    class Scope(metaclass=ABCMeta):
+        """Defines a scope of logs.
+
+        Scopes can be used to visually indent log records
+        in order to make them more readable and pretty.
+
+        Consider the following code.
+        ::
+            log: Log = ...
+
+            with log.scope.info('Opened.'):
+                log.info('Nested.')
+
+            log.info('Closed.')
+
+        This code could produce the following output.
+        ::
+            INFO   Opened.
+            INFO   |   Nested.
+            INFO   Closed.
+
+        Refer to ``Pretty`` for a more advanced example.
+        """
+
+        def debug(self, item: Any) -> ContextManager:
+            """Logs ``item`` with the ``DEBUG`` level."""
+            return self(Record(item, Level.DEBUG))
+
+        def info(self, item: Any) -> ContextManager:
+            """Logs ``item`` with the ``INFO`` level."""
+            return self(Record(item, Level.INFO))
+
+        def warn(self, item: Any) -> ContextManager:
+            """Logs ``item`` with the ``WARN`` level."""
+            return self(Record(item, Level.WARN))
+
+        def error(self, item: Any) -> ContextManager:
+            """Logs ``item`` with the ``ERROR`` level."""
+            return self(Record(item, Level.ERROR))
+
+        def fatal(self, item: Any) -> ContextManager:
+            """Logs ``item`` with the ``FATAL`` level."""
+            return self(Record(item, Level.FATAL))
+
+        @abstractmethod
+        def __call__(self, item: Union[Any, 'Record']) -> ContextManager:
+            """TODO."""
+
+    def debug(self, item: Any):
         """Logs ``item`` with the ``DEBUG`` level."""
         return self(Record(item, Level.DEBUG))
 
-    def info(self, item: Any) -> 'Scope':
+    def info(self, item: Any):
         """Logs ``item`` with the ``INFO`` level."""
         return self(Record(item, Level.INFO))
 
-    def warn(self, item: Any) -> 'Scope':
+    def warn(self, item: Any):
         """Logs ``item`` with the ``WARN`` level."""
         return self(Record(item, Level.WARN))
 
-    def error(self, item: Any) -> 'Scope':
+    def error(self, item: Any):
         """Logs ``item`` with the ``ERROR`` level."""
         return self(Record(item, Level.ERROR))
 
-    def fatal(self, item: Any) -> 'Scope':
+    def fatal(self, item: Any):
         """Logs ``item`` with the ``FATAL`` level."""
         return self(Record(item, Level.FATAL))
 
     @abstractmethod
-    def __call__(self, record: 'Record') -> 'Scope':
-        """Logs the provided ``record``."""
+    def __call__(self, item: Union[Any, 'Record']):
+        """Logs the provided ``item``."""
+
+    @property
+    @abstractmethod
+    def scope(self) -> 'Log.Scope':
+        """TODO."""
 
 
 class Level(Enum):
@@ -87,39 +139,3 @@ class Record:
         :return: a refreshed ``Record``.
         """
         return Record(self._item, self._level)
-
-
-class Scope(metaclass=ABCMeta):
-    """Defines a scope of logs.
-
-    For example, one could indent nested logs.
-    Consider the following code.
-    ::
-        log = ...
-
-        with log.info('Nesting.'):
-            log.info('A.')
-            log.warn('B.')
-
-        log.info('Out.')
-
-    This code could produce the following output.
-    ::
-        INFO Nesting.
-        INFO     B.
-        WARN     C.
-        INFO Out.
-
-    Refer to ``Pretty`` for a more advanced example.
-    """
-
-    @abstractmethod
-    def __enter__(self):
-        """The beginning of the scope."""
-
-    @abstractmethod
-    def __exit__(self,
-                 type: Optional[Type[BaseException]],
-                 exception: Optional[BaseException],
-                 traceback: Optional[TracebackType]):
-        """The ending of the scope."""
