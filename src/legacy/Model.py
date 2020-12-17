@@ -393,24 +393,30 @@ def Dynamic_Community_with_cliques(n0, pv, pve, M, P, gamma, N, distrib='Gaussia
 # =============================================================================
 
 if __name__ == '__main__':
-    generated = Dynamic_Community_with_cliques(
-        n0=10,
-        N=10 ** 3,
-        pv=0.3,
-        pve=0.0,
-        P=[[0.25, 0.25],
-           [0.25, 0.25]],
-        M=[0.5, 0.5],
-        gamma=20,
-        distrib='Gaussian',
-        moy=1,
-        ecart_type=0,
-    )
+    from pfe.misc.log import Pretty
 
-    keys = [
-        'nodes', 'Q', 'vlist', 'd', 'edges'
-    ]
+    log = Pretty()
+    log.info('Starting.')
 
-    print('Generated.')
-    for key, value in zip(keys, generated):
-        print(f'  {key + ":":<7} {value}')
+    with log.scope.info('Generating a graph.'):
+        generated = Dynamic_Community_with_cliques(
+            n0=10,
+            N=5 * 10**3,
+            pv=0.3,
+            pve=0.0,
+            P=[[0.25, 0.25],
+               [0.25, 0.25]],
+            M=[0.5, 0.5],
+            gamma=20,
+            distrib='Gaussian',
+            moy=1,
+            ecart_type=0,
+        )
+
+    # with log.scope.info('Generated.'):
+    #     keys = [
+    #         'nodes', 'Q', 'vlist', 'd', 'edges'
+    #     ]
+    #
+    #     for key, value in zip(keys, generated):
+    #         log.info(f'{key + ":":<7} {value}')

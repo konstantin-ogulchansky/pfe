@@ -2,15 +2,19 @@
 A model that generates hypergraphs.
 """
 
-from dataclasses import dataclass, asdict
+from collections import Counter
+from dataclasses import dataclass, asdict, field
 from itertools import product
-from typing import Callable, Union, Iterable
+from typing import Callable, Union
 
 import numpy as np
 
 from pfe.misc.errors import ಠ_ಠ
-from pfe.misc.log import Log, Pretty
-from pfe.misc.style import magenta
+from pfe.misc.log import Pretty, Log, Nothing, suppress_stderr
+from pfe.misc.log.misc import percents
+from pfe.misc.plot import Plot
+from pfe.misc.style import magenta, blue
+from pfe.tasks.statistics import Statistic
 
 
 @dataclass
@@ -20,6 +24,7 @@ class Parameters:
 
     :param n0: the initial number of nodes.
     :param n: the final number of nodes.
+    :param c: the number of communities.
     :param pv: a probability to add a node alone.
     :param pve: a probability to add a node + an edge.
     :param p: a square matrix of collaborations.
@@ -30,6 +35,7 @@ class Parameters:
 
     n0: int
     n: int
+    c: int
     pv: float
     pve: float
     p: Union[np.ndarray, list[list[float]]]
@@ -37,16 +43,31 @@ class Parameters:
     gamma: float
     distribution: Callable[[], int]
 
+    class Aux:
+        """Auxiliary fields that are convenient
+        but are not parameters of the model."""
+
+        def __init__(self, parameter: 'Parameters'):
+            self.p_flat = parameter.p.flatten()
+            self.communities = np.asarray(list(range(parameter.c)))
+            self.communities_pairs = \
+                np.asarray(list(product(self.communities, self.communities)))
+
+    aux: Aux = field(init=False)
+
     def __post_init__(self):
         """Validates parameters of the model."""
 
         self.p = np.asarray(self.p)
         self.m = np.asarray(self.m)
 
-        if self.n0 < len(self.p):
-            raise ValueError('`n0` must be greater or equal to the size of `p`.')
+        if self.n0 < self.c:
+            raise ValueError('`n0` must be greater or equal to `c`.')
         if self.n0 > self.n:
             raise ValueError('`n0` must be less or equal to `n`.')
+
+        if self.c != len(self.p):
+            raise ValueError('`p` must be of size `c`.')
 
         if not 0 <= self.pv <= 1:
             raise ValueError('`pv` must be in the range [0, 1].')
@@ -66,6 +87,8 @@ class Parameters:
         if self.m.sum() != 1:
             raise ValueError('`m` must be normalised.')
 
+        self.aux = Parameters.Aux(self)
+
 
 class Graph:
     """A (hyper)graph generated according to the model.
@@ -74,7 +97,6 @@ class Graph:
     :param edges: a list of hyperedges (each hyperedge is represented
                   as a list of vertices).
 
-    :param c: the number of communities.
     :param e:
         > list of list, each list corresponds to one community, and
         > contains a list of nodes repeated as their degrees; useful to pick
@@ -92,7 +114,6 @@ class Graph:
     def __init__(self,
                  nodes: list[list[int]],
                  edges: list[list[int]],
-                 c: int,
                  e: list[list[int]],
                  v: list[list[int]],
                  d: list[int],
@@ -102,17 +123,17 @@ class Graph:
         self.nodes = nodes
         self.edges = edges
 
-        self.c = c
         self.e = e
         self.v = v
         self.d = d
         self.q = q
 
     @classmethod
-    def generate(cls, parameters: Parameters) -> 'Graph':
+    def generate(cls, parameters: Parameters, log: Log = Nothing()) -> 'Graph':
         """Generates a graph according to the model with the provided parameters."""
 
         graph = cls.initial(parameters)
+        steps = 0
 
         while graph.number_of_nodes() < parameters.n:
             u = np.random.random()
@@ -124,41 +145,49 @@ class Graph:
             else:
                 graph.add_edge(parameters)
 
+            if (steps := steps + 1) % 1000 == 0:
+                log.info(f'Step {magenta | steps}.'.ljust(23) +
+                         f'Nodes: {blue | graph.number_of_nodes()}, '.ljust(23) +
+                         f'Edges: {blue | graph.number_of_edges()}. '.ljust(25) +
+                         f'[{percents(graph.number_of_nodes(), parameters.n)}]')
+
         return graph
 
     @classmethod
     def initial(cls, parameters: Parameters) -> 'Graph':
         """Generates the initial graph according to the model."""
 
-        c = len(parameters.p)
-        e = [[] for _ in range(c)]
+        e = [[] for _ in range(parameters.c)]
         v = [[] for _ in range(parameters.n)]
         d = [0  for _ in range(parameters.n)]
         q = []
 
-        nodes = [[] for _ in range(c)]
+        nodes = [[] for _ in range(parameters.c)]
         edges = []
 
         for node in range(parameters.n0):
             # Assign nodes to communities in a cyclic manner,
             # e.g., nodes will be assigned to 3 communities as
             # 0 -> 0, 1 -> 1, 2 -> 2, 3 -> 0, 4 -> 1, etc.
-            community = node % c
+            community = node % parameters.c
 
             nodes[community].append(node)
             q.append(community)
 
-        return Graph(nodes, edges, c=c, e=e, v=v, d=d, q=q)
+        return Graph(nodes, edges, e=e, v=v, d=d, q=q)
 
     def number_of_nodes(self) -> int:
         """Returns the number of nodes in the graph."""
         return len(self.q)
 
+    def number_of_edges(self) -> int:
+        """Returns the number of edges in the graph."""
+        return len(self.edges)
+
     def add_node(self, parameters: Parameters):
         """Adds a node to the graph."""
 
-        communities = np.asarray(list(range(self.c)))
-        community = np.random.choice(communities, p=parameters.m)
+        community = np.random.choice(parameters.aux.communities, p=parameters.m)
 
         self.nodes[community].append(len(self.q))
         self.q.append(community)
@@ -170,17 +199,15 @@ class Graph:
     def add_edge(self, parameters: Parameters):
         """Adds an edge to the graph."""
 
-        communities = np.asarray(list(range(self.c)))
-        communities_pairs = np.asarray(list(product(communities, communities)))
-
         # Select a random pair from `communities_pairs`.
-        pair_idx = np.random.choice(communities_pairs.shape[0], p=parameters.p.flatten())
-        pair = communities_pairs[pair_idx, :]
+        pair_idx = np.random.choice(parameters.aux.communities_pairs.shape[0], p=parameters.aux.p_flat)
+        pair = parameters.aux.communities_pairs[pair_idx]
 
         q1, q2 = pair
         h1, h2 = parameters.distribution(), parameters.distribution()
 
-        def hyperedge(q: int, h: int) -> Iterable[int]:
+        def hyperedge(q: int, h: int) -> list[int]:
+            e = []
             x = len(self.nodes[q])  # The number of nodes in the community `q`.
             y = len(self.e[q])      # The sum of degrees of nodes in the community `q`.
             p = parameters.gamma * x / (y + parameters.gamma * x)
@@ -195,10 +222,12 @@ class Graph:
                     d = int(len(self.e[q]) * np.random.uniform())
                     u = self.e[q][d]
 
-                yield u
+                e.append(u)
 
-        e1 = list(hyperedge(q1, h1))
-        e2 = list(hyperedge(q2, h2))
+            return e
+
+        e1 = hyperedge(q1, h1)
+        e2 = hyperedge(q2, h2)
 
         self.edges.append(e1 + e2)
 
@@ -229,31 +258,52 @@ if __name__ == '__main__':
 
     np.set_printoptions(linewidth=np.inf, suppress=True)
 
-    with log.info('Generating a graph.'):
+    with log.scope.info('Generating a graph.'):
         parameters = Parameters(
             n0=10,
-            n=10**3,
+            n=5 * 10**3,
+            c=2,
             pv=0.3,
             pve=0.0,
             p=[[0.25, 0.25], [0.25, 0.25]],
             m=[0.5, 0.5],
             gamma=20,
-            distribution=normal(loc=1, scale=0),
+            distribution=lambda: 1,
         )
 
-        with log.info('Parameters.'):
+        with log.scope.info('Parameters.'):
             def flat(x: str) -> str:
                 return x.replace('\n', '')
 
             for key, value in asdict(parameters).items():
                 log.info(f'{str(magenta | key):<21} = {flat(str(value))}')
 
-        graph = Graph.generate(parameters)
+        graph = Graph.generate(parameters, log=log)
 
-        with log.info('Generated.'):
-            log.info(f'{magenta | "nodes"} = {graph.nodes}')
-            log.info(f'{magenta | "edges"} = {graph.edges}')
-            log.info(f'{magenta | "d"}     = {graph.d}')
-            log.info(f'{magenta | "e"}     = {graph.e}')
-            log.info(f'{magenta | "v"}     = {graph.v}')
-            log.info(f'{magenta | "q"}     = {graph.q}')
+    with log.scope.info('Computing the degree distribution.'), suppress_stderr():
+        import powerlaw as pl
+
+        fit = pl.Fit(graph.d, discrete=True)
+
+        distribution = Statistic(Counter(graph.d))
+        distribution = distribution.truncate(fit.xmin, fit.xmax)
+
+        log.info(fit.loglikelihood_ratio('power_law', 'truncated_power_law', nested=True))
+
+    with log.scope.info('Plotting the distribution.'):
+        plot = Plot()
+        plot.scatter(distribution.normalized())
+
+        plot.x.label('Degree')
+        plot.x.scale('log')
+        plot.x.limit(10**-1, 10**3)
+
+        plot.y.label('Number of Nodes')
+        plot.y.scale('log')
+
+        fit.plot_pdf(ax=plot.ax, label='Emp.')
+        fit.power_law.plot_pdf(ax=plot.ax, label='PL')
+        fit.truncated_power_law.plot_pdf(ax=plot.ax, label='TPL')
+
+        plot.legend()
+        plot.show()

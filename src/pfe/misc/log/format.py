@@ -92,7 +92,7 @@ class Format:
 
         traceback = format_tb(traceback)
         traceback = map(form, traceback)
-        traceback = '\n'.join(traceback)
+        traceback = ''.join(traceback)
 
         type = highlight(type.__name__)
         type = type.rstrip('\n')

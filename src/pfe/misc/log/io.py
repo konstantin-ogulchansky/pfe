@@ -3,24 +3,35 @@ from io import StringIO
 from typing import Any, Callable, ContextManager, IO
 
 
-def redirect_stdout_to(log: Callable[[str], Any], **kwargs: Any) -> ContextManager:
+def suppress_stdout() -> ContextManager:
+    """Suppresses the ``stdout`` stream."""
+    return _redirect_io(redirect_stdout, lambda _: ...)
+
+
+def suppress_stderr() -> ContextManager:
+    """Suppresses the ``stderr`` stream."""
+    return _redirect_io(redirect_stderr, lambda _: ...)
+
+
+def redirect_stdout_to(log: Callable[[str], Any]) -> ContextManager:
     """Redirects the ``stdout`` stream to the provided log.
 
     :param log: a log function to redirect to.
     """
-    return _redirect_io(redirect_stdout, log, **kwargs)
+    return _redirect_io(redirect_stdout, log, enter=True)
 
 
-def redirect_stderr_to(log: Callable[[str], Any], **kwargs: Any) -> ContextManager:
+def redirect_stderr_to(log: Callable[[str], Any]) -> ContextManager:
     """Redirects the ``stderr`` stream to the provided log.
 
     :param log: a log function to redirect to.
     """
-    return _redirect_io(redirect_stderr, log, **kwargs)
+    return _redirect_io(redirect_stderr, log, enter=True)
 
 
 def _redirect_io(redirect: Callable[[IO], Any],
                  log: Callable[[str], Any],
+                 enter: bool = False,
                  strip: bool = True) -> ContextManager:
 
     class IO(StringIO):
@@ -51,9 +62,10 @@ def _redirect_io(redirect: Callable[[IO], Any],
         def __exit__(self, exc_type, exc_val, exc_tb):
             self._inner.__exit__(exc_type, exc_val, exc_tb)
 
-    cx = Cx(redirect(IO(log)))
-
-    return cx
+    if enter:
+        return Cx(redirect(IO(log)))
+    else:
+        return redirect(IO(log))
 
 
 if __name__ == '__main__':
@@ -79,7 +91,11 @@ if __name__ == '__main__':
         sys.stdout.write('[4]')
 
     # Written to the plain `stdout` again.
-    sys.stdout.write('\n[5]')
+    sys.stdout.write('[5]\n')
+
+    with suppress_stdout(), suppress_stderr():
+        sys.stdout.write('[*]')
+        sys.stderr.write('[*]')
 
     # Redirected globally.
     redirect_stdout_to(log.info)
