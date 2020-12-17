@@ -393,13 +393,17 @@ def Dynamic_Community_with_cliques(n0, pv, pve, M, P, gamma, N, distrib='Gaussia
 # =============================================================================
 
 if __name__ == '__main__':
+    from collections import Counter
+
     from pfe.misc.log import Pretty
+    from pfe.misc.plot import Plot
+    from pfe.tasks.statistics import Statistic
 
     log = Pretty()
     log.info('Starting.')
 
     with log.scope.info('Generating a graph.'):
-        generated = Dynamic_Community_with_cliques(
+        nodes, _, _, degrees, edges = Dynamic_Community_with_cliques(
             n0=10,
             N=5 * 10**3,
             pv=0.3,
@@ -413,10 +417,18 @@ if __name__ == '__main__':
             ecart_type=0,
         )
 
-    # with log.scope.info('Generated.'):
-    #     keys = [
-    #         'nodes', 'Q', 'vlist', 'd', 'edges'
-    #     ]
-    #
-    #     for key, value in zip(keys, generated):
-    #         log.info(f'{key + ":":<7} {value}')
+    with log.scope.info('Computing the degree distribution.'):
+        distribution = Statistic(Counter(degrees))
+
+    with log.scope.info('Plotting the distribution.'):
+        plot = Plot(title=r'Degree Distribution I')
+        plot.scatter(distribution)
+
+        plot.x.label('Degree $k$')
+        plot.x.scale('log')
+        plot.x.limit(10**-1, 10**3)
+
+        plot.y.label('Number of Nodes with Degree $k$')
+        plot.y.scale('log')
+
+        plot.show()

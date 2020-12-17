@@ -265,7 +265,8 @@ if __name__ == '__main__':
             c=2,
             pv=0.3,
             pve=0.0,
-            p=[[0.25, 0.25], [0.25, 0.25]],
+            p=[[0.25, 0.25],
+               [0.25, 0.25]],
             m=[0.5, 0.5],
             gamma=20,
             distribution=lambda: 1,
@@ -281,29 +282,42 @@ if __name__ == '__main__':
         graph = Graph.generate(parameters, log=log)
 
     with log.scope.info('Computing the degree distribution.'), suppress_stderr():
+        distribution = Statistic(Counter(graph.d))
+
         import powerlaw as pl
 
-        fit = pl.Fit(graph.d, discrete=True)
+        fit = pl.Fit(list(distribution.sequence()), discrete=True)
 
-        distribution = Statistic(Counter(graph.d))
-        distribution = distribution.truncate(fit.xmin, fit.xmax)
-
-        log.info(fit.loglikelihood_ratio('power_law', 'truncated_power_law', nested=True))
+        x_min = fit.xmin
+        x_max = fit.xmax
 
     with log.scope.info('Plotting the distribution.'):
-        plot = Plot()
-        plot.scatter(distribution.normalized())
+        plot = Plot(title='Degree Distribution II')
+        plot.scatter(distribution)
 
-        plot.x.label('Degree')
+        plot.x.label('Degree $k$')
         plot.x.scale('log')
         plot.x.limit(10**-1, 10**3)
 
-        plot.y.label('Number of Nodes')
+        plot.y.label('Number of Nodes with Degree $k$')
         plot.y.scale('log')
 
-        fit.plot_pdf(ax=plot.ax, label='Emp.')
-        fit.power_law.plot_pdf(ax=plot.ax, label='PL')
-        fit.truncated_power_law.plot_pdf(ax=plot.ax, label='TPL')
+        plot.show()
+
+    with log.scope.info('Plotting the fit.'), suppress_stderr():
+        plot = Plot(title='Fit')
+        plot.scatter(distribution.truncate(x_min, x_max).normalized())
+
+        plot.x.label('Degree $k$')
+        plot.x.scale('log')
+        plot.x.limit(10**-1, 10**3)
+
+        plot.y.label('Fraction of Nodes with Degree $k$')
+        plot.y.scale('log')
+
+        fit.plot_pdf(ax=plot.ax, label='Empirical')
+        fit.power_law.plot_pdf(ax=plot.ax, label='Power-Law')
+        fit.truncated_power_law.plot_pdf(ax=plot.ax, label='Power-Law with Cut-Off')
 
         plot.legend()
         plot.show()
