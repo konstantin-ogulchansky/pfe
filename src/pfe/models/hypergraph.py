@@ -66,9 +66,6 @@ class Parameters:
         if self.n0 > self.n:
             raise ValueError('`n0` must be less or equal to `n`.')
 
-        if self.c != len(self.p):
-            raise ValueError('`p` must be of size `c`.')
-
         if not 0 <= self.pv <= 1:
             raise ValueError('`pv` must be in the range [0, 1].')
         if not 0 <= self.pve <= 1:
@@ -81,6 +78,9 @@ class Parameters:
             raise ValueError('`p` has an incorrect form.')
         if self.m.ndim != 1 or self.p.shape[0] != self.m.shape[0]:
             raise ValueError('`m` has an incorrect form.')
+
+        if self.c != self.p.shape[0]:
+            raise ValueError('`p` must be of size `c` by `c`.')
 
         if self.p.sum() != 1:
             raise ValueError('`p` must be normalised.')
@@ -261,7 +261,7 @@ if __name__ == '__main__':
     with log.scope.info('Generating a graph.'):
         parameters = Parameters(
             n0=10,
-            n=5 * 10**3,
+            n=10**4,
             c=2,
             pv=0.3,
             pve=0.0,
@@ -280,6 +280,10 @@ if __name__ == '__main__':
                 log.info(f'{str(magenta | key):<21} = {flat(str(value))}')
 
         graph = Hypergraph.generate(parameters, log=log)
+
+        log.info(f'Generated a graph with '
+                 f'{blue | graph.number_of_nodes()} nodes and '
+                 f'{blue | graph.number_of_edges()} edges.')
 
     with log.scope.info('Computing the degree distribution.'), suppress_stderr():
         distribution = Statistic(Counter(graph.d))
