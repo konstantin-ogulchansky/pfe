@@ -73,7 +73,7 @@ def generate(parameters: Parameters, log: Log = Nothing()) -> nx.Graph:
 
     .. [1] Trevor Fenner, Mark Levene and George Loizou,
            "A model for collaboration networks giving rise to
-            a power-law distribution with an exponential cutoff",
+           a power-law distribution with an exponential cutoff",
            Social Networks, vol. 29, no. 1, pp. 70–80, 2007.
            https://doi.org/10.1016/j.socnet.2005.12.003
     """
@@ -104,7 +104,7 @@ def generate(parameters: Parameters, log: Log = Nothing()) -> nx.Graph:
         q = np.random.uniform()
 
         if p <= parameters.p:
-            # Insert a new ball to `active_urn[1]`.
+            # Insert a new ball `n` to `active_urn[1]`.
             graph.add_node(n := graph.number_of_nodes())
 
             active_urns[1].add(n)
@@ -112,8 +112,8 @@ def generate(parameters: Parameters, log: Log = Nothing()) -> nx.Graph:
 
             # NOTE: In "World-Wide Web scaling exponent from Simon’s 1955 model",
             # they propose to add an edge between the new node and an arbitrarily
-            # chosen one. This would ensure that `urn_i` contains only balls with
-            # degree `i`, and not with degree `i-1`.
+            # chosen one. This would ensure that `active_urn[i]` contains only
+            # balls with degree `i`, and not with degree `i-1`.
         else:
             # Select a random `active_urn[i]`.
             w = np.asarray([k * len(active_urns[k]) for k in active_urns], dtype=np.float64)
@@ -126,13 +126,13 @@ def generate(parameters: Parameters, log: Log = Nothing()) -> nx.Graph:
                 k = np.random.choice([k for k in active_balls.keys() if k != j])
                 l = active_balls[k]
 
-                # Transfer `ball[j]` from `active_urn[i]` to `active_urn[i+1]`.
+                # Transfer ball `j` from `active_urn[i]` to `active_urn[i+1]`.
                 active_urns[i].remove(j)
                 active_urns.setdefault(i+1, set())
                 active_urns[i+1].add(j)
                 active_balls[j] = i+1
 
-                # Transfer `ball[k]` from `active_urn[l]` to `active_urn[l+1]`.
+                # Transfer ball `k` from `active_urn[l]` to `active_urn[l+1]`.
                 active_urns[l].remove(k)
                 active_urns.setdefault(l+1, set())
                 active_urns[l+1].add(k)
@@ -140,7 +140,7 @@ def generate(parameters: Parameters, log: Log = Nothing()) -> nx.Graph:
 
                 graph.add_edge(j, k)
             else:
-                # Deactivate `ball[j]`.
+                # Deactivate ball `j`.
                 active_urns[i].remove(j)
                 active_balls.pop(j)
 
