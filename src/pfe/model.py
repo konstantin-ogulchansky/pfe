@@ -224,7 +224,7 @@ def normal(loc: float, scale: float) -> Callable[[], int]:
 
 
 if __name__ == '__main__':
-    log: Log = Pretty()
+    log = Pretty()
     log.info('Starting.')
 
     np.set_printoptions(linewidth=np.inf, suppress=True)

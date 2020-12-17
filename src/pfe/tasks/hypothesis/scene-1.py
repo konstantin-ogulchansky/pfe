@@ -149,25 +149,25 @@ if __name__ == '__main__':
 
     redirect_stderr_to(log.warn)
 
-    with log.info('Reading a graph.'):
-        graph = parse(publications_in('COMP', between=(1990, 1992), log=log))
+    with log.scope.info('Reading a graph.'):
+        graph = parse(publications_in('COMP', between=(1990, 2018), log=log))
 
         log.info(f'Read a graph with '
                  f'{blue | graph.number_of_nodes()} nodes and '
                  f'{blue | graph.number_of_edges()} edges.')
 
-    with log.info('Computing the degree distribution...'):
+    with log.scope.info('Computing the degree distribution...'):
         statistic = degree_distribution(graph, weighted)
 
-    with log.info('Fitting the hypothesis...'):
+    with log.scope.info('Fitting the hypothesis...'):
         fit = pl.Fit(list(statistic.sequence()), discrete=True)
 
-        with log.info('Estimating power-law parameters...'):
+        with log.scope.info('Estimating power-law parameters...'):
             log.info(f'α: {fit.power_law.alpha}')
             log.info(f'σ: {fit.power_law.sigma}')
             log.info(f'x: {[fit.power_law.xmin, fit.power_law.xmax]}')
 
-        with log.info('Estimating power-law with cutoff parameters...'):
+        with log.scope.info('Estimating power-law with cutoff parameters...'):
             log.info(f'α: {fit.truncated_power_law.alpha}')
             log.info(f'λ: {fit.truncated_power_law.Lambda}')
             log.info(f'x: {[fit.truncated_power_law.xmin, fit.truncated_power_law.xmax]}')
@@ -177,7 +177,7 @@ if __name__ == '__main__':
         if not fit.xmax == fit.power_law.xmax == fit.truncated_power_law.xmax:
             log.warn('`xmax` differs.')
 
-    with log.info('Comparing distributions...'):
+    with log.scope.info('Comparing distributions...'):
         comparison = {}
 
         for a in fit.supported_distributions:
@@ -190,11 +190,11 @@ if __name__ == '__main__':
             file.write('\n'.join(f'{a:<23} {b:<23} {comparison[a, b]}'
                                  for a, b in comparison))
 
-    with log.info('Plotting the degree distribution...'):
+    with log.scope.info('Plotting the degree distribution...'):
         plot_dd(statistic, fit)
-    with log.info('Plotting theoretical PDFs...'):
+    with log.scope.info('Plotting theoretical PDFs...'):
         plot_pdf(statistic, fit)
-    with log.info('Plotting theoretical CDFs...'):
+    with log.scope.info('Plotting theoretical CDFs...'):
         plot_cdf(statistic, fit)
-    with log.info('Plotting theoretical CCDfs...'):
+    with log.scope.info('Plotting theoretical CCDfs...'):
         plot_ccdf(statistic, fit)

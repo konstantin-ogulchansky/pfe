@@ -15,18 +15,18 @@ if __name__ == '__main__':
     log: Log = Pretty()
     log.info('Starting...')
 
-    with log.info('Reading publications.'):
+    with log.scope.info('Reading publications.'):
         # publications = list(all_publications(between=(1990, 2018), log=log))
         publications = list(publications_in('COMP', between=(1990, 1996), log=log))
 
-    with log.info('Constructing a graph.'):
+    with log.scope.info('Constructing a graph.'):
         graph = parse(publications)
 
         log.info(f'Constructed a graph with '
                  f'{blue | graph.number_of_nodes()} nodes and '
                  f'{blue | graph.number_of_edges()} edges.')
 
-    with log.info('Computing the metrics.'):
+    with log.scope.info('Computing the metrics.'):
         log.info('The number of authors:                   '
                  + str(blue | number_of_authors(publications)))
         log.info('The number of publications:              '

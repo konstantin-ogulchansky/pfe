@@ -1,59 +1,45 @@
 import json
 from collections import Counter
+from pathlib import Path
+
 import matplotlib.pyplot as plt
-from pfe.misc.log import Pretty, Log
-import numpy as np
 
+from pfe.misc.log import Pretty
+from pfe.misc.log.misc import percents
+from pfe.misc.style import blue, bold, gray
 
-log: Log = Pretty()
+if __name__ == '__main__':
+    log = Pretty()
+    log.info('Starting.')
 
-with open('../../../data/graph/ig/leiden_communities.json', 'r') as file:
-    data = json.load(file)
+    data = Path('../../../data/graph/ig')
 
-n_members = []
-for c in data.items():
-    n_members.append(len(c[1]))
+    with log.scope.info('Reading communities.'):
+        with open(data / 'leiden_communities.json', 'r') as file:
+            communities = json.load(file)
+            communities = [(x, len(y)) for x, y in communities.items()]
+            communities.sort(key=lambda x: x[1], reverse=True)  # Sort by community sizes.
 
-total_authors = sum(n_members)
+    sizes = Counter(y for _, y in communities)
+    total = sum(y for _, y in communities)
 
-print('Total number of authors: ', total_authors)
+    log.info(f'The number of authors:       {blue | total}')
+    log.info(f'The number of unique sizes:  {blue | len(sizes)}')
+    log.info(f'The largest community size:  {blue | max(sizes)}')
+    log.info(f'The smallest community size: {blue | min(sizes)}')
 
-count_sizes = dict(Counter(n_members))  # Dictionary 'community size': total number of members in such communities
+    largest = 20
 
+    with log.scope.info(f'The sizes of top {bold | largest} largest communities:'):
+        for community, size in communities[:largest]:
+            log.info(f'"{community}":'.ljust(7) +
+                     f'{blue | str(size).rjust(7)}  {gray | "~"}'
+                     f'{percents(size, total, precision=6)}')
 
-def percent_of(k, n):
-    return round(k*n * 100 / total_authors, 6)
+    with log.scope.info('Plotting.'):
+        _, ax = plt.subplots()
 
+        ax.pie([x*y for x, y in sizes.items()], autopct='%1.01f%%', startangle=90)
+        ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
 
-count_percentage = {k: percent_of(v, k) for k, v in count_sizes.items()}
-
-print('Number of unique sizes: ', len(count_sizes))
-print('Max community size: ', max(count_percentage.keys()))
-print('Max %: ', max(count_percentage.values()))
-
-list = [(k, v) for k, v in count_percentage.items()]
-list.sort(reverse=True)
-
-print('Size: %')
-for k, v in list:
-    print(f'{k} : {v}%')
-
-
-fig1, ax1 = plt.subplots()
-ax1.pie([y for x, y in list], labels=[x for x, y in list], autopct='%1.01f%%',
-        shadow=True, startangle=90)
-ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
-
-#
-# plt.rcdefaults()
-# fig, ax = plt.subplots()
-#
-# # Example data
-# people = count_percentage.keys()
-# y_pos = np.arange(len(people))
-# performance = count_percentage.values()
-#
-# ax.barh(y_pos, performance, align='center')
-# ax.set_yticks(y_pos)
-# ax.set_yticklabels(people)
-plt.show()
+        plt.show()

@@ -24,17 +24,17 @@ if __name__ == '__main__':
 
     redirect_stderr_to(log.warn)
 
-    with log.info('Reading a graph.'):
+    with log.scope.info('Reading a graph.'):
         graph = parse(publications_in('COMP', between=(1990, 2018), log=log))
 
         log.info(f'Read a graph with '
                  f'{blue | graph.number_of_nodes()} nodes and '
                  f'{blue | graph.number_of_edges()} edges.')
 
-    with log.info('Computing the degree distribution.'):
+    with log.scope.info('Computing the degree distribution.'):
         statistic = degree_distribution(graph, weighted=True)
 
-    with log.info('Fitting the hypothesis.'):
+    with log.scope.info('Fitting the hypothesis.'):
         fit = pl.Fit(list(statistic.sequence()), discrete=True)
 
         x_min = int(fit.xmin or min(statistic.keys()))
@@ -49,7 +49,7 @@ if __name__ == '__main__':
 
         assert abs(1 - sum(pdf.values())) <= 1e-3, '`sum p_i` must equal 1.'
 
-    with log.info('Plotting PDF.'):
+    with log.scope.info('Plotting PDF.'):
         plot = Plot(title='PDF')
         plot.scatter(truncated.normalized())
         plot.scatter(pdf, color='red')
@@ -58,7 +58,7 @@ if __name__ == '__main__':
 
         plot.show()
 
-    with log.info('Plotting CDF.'):
+    with log.scope.info('Plotting CDF.'):
         plot = Plot(title='CDF')
         plot.scatter(cdf, color='red')
 
@@ -66,7 +66,7 @@ if __name__ == '__main__':
 
         plot.show()
 
-    with log.info('Computing the χ² statistic.'):
+    with log.scope.info('Computing the χ² statistic.'):
         n = truncated.total()
 
         obs = {x: truncated[x] for x in sorted(truncated)}

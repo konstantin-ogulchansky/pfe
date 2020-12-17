@@ -207,10 +207,10 @@ if __name__ == '__main__':
     from pfe.misc.log import Pretty
     from pfe.misc.style import blue
 
-    log: Log = Pretty()
-    log.info('Starting...')
+    log = Pretty()
+    log.info('Starting.')
 
-    with log.info('Reading a graph.'):
+    with log.scope.info('Reading a graph.'):
         graph = parse(publications_in('COMP', between=(1990, 1996), log=log))
 
         log.info(f'Read a graph with '

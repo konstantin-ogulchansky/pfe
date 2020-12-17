@@ -16,17 +16,17 @@ from pfe.misc.log import Log, Pretty
 def louvain(data: Path, log: Log):
     """Community detection using the Louvain method."""
 
-    with log.info('Reading `nx.Graph`...'):
+    with log.scope.info('Reading `nx.Graph`.'):
         graph = nx.read_weighted_edgelist(data / 'nx_full_graph_relabeled_nodes.txt')
 
         log.info(f'Read a graph with '
                  f'{blue | graph.number_of_nodes()} nodes and '
                  f'{blue | graph.number_of_edges()} edges.')
 
-    with log.info(f'Detecting communities using the {underlined | "Louvain"} method...'):
+    with log.scope.info(f'Detecting communities using the {underlined | "Louvain"} method.'):
         communities = community.best_partition(graph)
 
-    with log.info('Saving communities into a file...'):
+    with log.scope.info('Saving communities into a file.'):
         new_communities = {}
         for x, y in communities.items():
             new_communities.setdefault(y, [])
@@ -39,14 +39,14 @@ def louvain(data: Path, log: Log):
 def leiden(data: Path, log: Log):
     """Community detection using the Leiden method."""
 
-    with log.info('Reading `ig.Graph`...'):
+    with log.scope.info('Reading `ig.Graph`...'):
         graph = ig.Graph.Read_Pajek(str(data / 'ig_full_graph_relabeled_nodes.net'))
 
         log.info(f'Read a graph with '
                  f'{blue | len(graph.vs)} vertices and '
                  f'{blue | len(graph.es)} edges.')
 
-    with log.info(f'Detecting communities using the {underlined | "Leiden"} method...'):
+    with log.scope.info(f'Detecting communities using the {underlined | "Leiden"} method...'):
         objective = 'modularity'
         communities = graph.community_leiden(objective_function=objective, weights='weight')
 
@@ -54,11 +54,11 @@ def leiden(data: Path, log: Log):
         log.info('The number of communities:   ' + str(blue | len(communities)))
         log.info('The modularity value:        ' + str(blue | communities.modularity))
 
-    with log.info('Saving communities into a file...'):
+    with log.scope.info('Saving communities into a file...'):
         with open(data / 'leiden_communities.json', 'w') as file:
             json.dump(dict(enumerate(communities)), file)
 
-    with log.info('Saving the modularity value into a file...'):
+    with log.scope.info('Saving the modularity value into a file...'):
         with open(data / 'leiden_modularity.json', 'w') as file:
             json.dump(communities.modularity, file)
 

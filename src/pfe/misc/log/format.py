@@ -101,6 +101,6 @@ class Format:
         exception = exception.strip('(,)')
         exception = highlight(exception)
 
-        return f'{red | "Traceback:"} \n\n' \
+        return f'{red | "Traceback (most recent call last):"} \n\n' \
                f'{traceback} \n' \
                f'{bold | type}: {exception}'

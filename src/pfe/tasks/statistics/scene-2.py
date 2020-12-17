@@ -16,16 +16,16 @@ if __name__ == '__main__':
 
     redirect_stderr_to(log.warn)
 
-    with log.info('Reading publications.'):
+    with log.scope.info('Reading publications.'):
         publications = publications_in('COMP', between=(1990, 2018), log=log)
         publications = list(publications)
 
         log.info(f'Read {blue | len(publications)} publications.')
 
-    with log.info('Computing the distribution of authors per publication.'):
+    with log.scope.info('Computing the distribution of authors per publication.'):
         statistic = authors_per_publication(publications)
 
-    with log.info('Plotting the distribution.'):
+    with log.scope.info('Plotting the distribution.'):
         plot = Plot(tex=True)
         plot.scatter(statistic)
 
