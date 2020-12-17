@@ -90,8 +90,8 @@ class Parameters:
         self.aux = Parameters.Aux(self)
 
 
-class Graph:
-    """A (hyper)graph generated according to the model.
+class Hypergraph:
+    """A hypergraph generated according to the model.
 
     :param nodes: a list of communities of nodes.
     :param edges: a list of hyperedges (each hyperedge is represented
@@ -129,7 +129,7 @@ class Graph:
         self.q = q
 
     @classmethod
-    def generate(cls, parameters: Parameters, log: Log = Nothing()) -> 'Graph':
+    def generate(cls, parameters: Parameters, log: Log = Nothing()) -> 'Hypergraph':
         """Generates a graph according to the model with the provided parameters."""
 
         graph = cls.initial(parameters)
@@ -154,7 +154,7 @@ class Graph:
         return graph
 
     @classmethod
-    def initial(cls, parameters: Parameters) -> 'Graph':
+    def initial(cls, parameters: Parameters) -> 'Hypergraph':
         """Generates the initial graph according to the model."""
 
         e = [[] for _ in range(parameters.c)]
@@ -174,7 +174,7 @@ class Graph:
             nodes[community].append(node)
             q.append(community)
 
-        return Graph(nodes, edges, e=e, v=v, d=d, q=q)
+        return Hypergraph(nodes, edges, e=e, v=v, d=d, q=q)
 
     def number_of_nodes(self) -> int:
         """Returns the number of nodes in the graph."""
@@ -279,7 +279,7 @@ if __name__ == '__main__':
             for key, value in asdict(parameters).items():
                 log.info(f'{str(magenta | key):<21} = {flat(str(value))}')
 
-        graph = Graph.generate(parameters, log=log)
+        graph = Hypergraph.generate(parameters, log=log)
 
     with log.scope.info('Computing the degree distribution.'), suppress_stderr():
         distribution = Statistic(Counter(graph.d))
