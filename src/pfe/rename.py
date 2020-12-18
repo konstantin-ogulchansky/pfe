@@ -13,7 +13,7 @@ from pfe.parse import parse, all_publications
 
 if __name__ == '__main__':
     log = Pretty()
-    log.info('Starting...')
+    log.info('Starting.')
 
     data = Path('../../data/graph')
 

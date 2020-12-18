@@ -6,12 +6,16 @@ import json
 from typing import Any, Union
 from pathlib import Path
 
+from pfe.misc.log import Pretty, Log, Nothing
+from pfe.misc.style import magenta, blue, gray
 
-def clean(data: dict[str, Any]) -> list[dict[str, Any]]:
+
+def clean(data: dict[str, Any], log: Log = Nothing()) -> list[dict[str, Any]]:
     """Cleans the provided `data` by removing unused fields.
 
     :param data: a dictionary that represents a JSON file
                  with collaboration data.
+    :param log: logs
 
     :returns: a list that contains cleaned
               information about publications.
@@ -53,8 +57,8 @@ def clean(data: dict[str, Any]) -> list[dict[str, Any]]:
                 } for author in authors(publication)]
             })
         except KeyError as error:
-            log(f'Key {str(error)} not found in \n'
-                f'  {publication}')
+            log.warn(f'Key {magenta | str(error)} not found in \n'
+                     f'{gray | "|"} {publication}')
 
     return result
 
@@ -83,10 +87,8 @@ def save(data: list[dict[str, Any]], *, to: Union[str, Path]):
 
 
 if __name__ == '__main__':
-    from pfe.misc.log import timestamped
-
-    log = timestamped
-    log('Starting...')
+    log = Pretty()
+    log.info('Starting.')
 
     # We assume that data is stored in a directory
     # with the following structure.
@@ -103,12 +105,12 @@ if __name__ == '__main__':
     # Cleaned data will be stored in a directory
     # with equivalent structure.
 
-    old_directory = Path('../data/raw')
-    new_directory = Path('../data/clean')
+    old_directory = Path('../../data/raw')
+    new_directory = Path('../../data/test')
 
     # Create new folder for cleaned data.
     if new_directory.exists():
-        raise Exception(f'Cannot clean data: `{new_directory}` already exists.')
+        raise ValueError(f'Cannot clean data: "{new_directory}" already exists.')
 
     new_directory.mkdir()
 
@@ -122,15 +124,11 @@ if __name__ == '__main__':
 
             new_file = new_subdirectory / old_file.name
 
-            log(f'Cleaning `{old_file}`...')
+            with log.scope.info(f'Cleaning "{magenta | old_file}".'):
+                data = load(from_=old_file)
+                save(clean(data, log=log), to=new_file)
 
-            # Clean each file and place it in the new folder.
-            data = load(from_=old_file)
+                log.info(f'Old file size: {blue | old_file.stat().st_size / (1024 * 1024)} Mb.')
+                log.info(f'New file size: {blue | new_file.stat().st_size / (1024 * 1024)} Mb.')
 
-            save(clean(data), to=new_file)
-
-            log(f'Done. \n'
-                f'  - Old: {old_file.stat().st_size / (1024 * 1024)} Mb. \n'
-                f'  - New: {new_file.stat().st_size / (1024 * 1024)} Mb. \n')
-
-    log('Finished.')
+    log.info('Finished.')
