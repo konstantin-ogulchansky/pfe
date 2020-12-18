@@ -32,7 +32,8 @@ class Plot:
             plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern Roman']})
             plt.rc('text', usetex=True)
 
-        self.ax = ax or plt.gca()
+        self.ax: plt.Axes = ax or plt.gca()
+        self.fig: plt.Figure = self.ax.figure
 
         if title is not None:
             self.ax.set_title(title)
@@ -107,24 +108,46 @@ class Plot:
         frame = legend.get_frame()
         frame.set_linewidth(0.5)
 
-    @classmethod
-    def show(cls):
+    def show(self):
         """Shows the plot."""
-        plt.show()
+        self.fig.show()
 
-    @classmethod
-    def save(cls, path: str, and_show: bool = True):
+    def resize(self,
+               width: Optional[float] = None,
+               height: Optional[float] = None,
+               scale: float = 1):
+        """Resizes the figure.
+
+        :param width: the width of the figure in inches.
+        :param height: the height of the figure in inches.
+        :param scale: the scaling factor to multiply
+                      the width and the height with.
+        """
+
+        if width is None:
+            width = self.fig.get_figwidth()
+        if height is None:
+            height = self.fig.get_figheight()
+
+        self.fig.set_size_inches(width * scale, height * scale)
+        self.fig.tight_layout()
+
+    def save(self, path: str, dpi: Optional[int] = None, and_show: bool = True):
         """Saves the plot (and probably shows it too).
 
-        :param path: a path to a file to save the plot to.
+        :param path: the path to a file to save the plot to.
+        :param dpi: the resolution of the figure in DPI (dots per inch).
         :param and_show: whether to show the plot after saving;
                          very convenient with PyCharm's scientific mode.
         """
 
-        plt.savefig(path)
+        if dpi is not None:
+            self.fig.savefig(path, dpi=dpi)
+        else:
+            self.fig.savefig(path)
 
         if and_show:
-            cls.show()
+            self.show()
 
 
 class XAxis:

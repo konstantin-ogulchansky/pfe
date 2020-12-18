@@ -37,4 +37,5 @@ if __name__ == '__main__':
         plot.y.scale('log')
         plot.y.limit(10 ** -1, 10 ** 6)
 
+        plot.resize(scale=0.65)
         plot.save('COMP-ppa.eps')

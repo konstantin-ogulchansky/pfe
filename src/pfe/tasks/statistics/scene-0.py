@@ -13,7 +13,7 @@ from pfe.tasks.statistics import number_of_authors, number_of_publications, numb
 
 if __name__ == '__main__':
     log: Log = Pretty()
-    log.info('Starting...')
+    log.info('Starting.')
 
     with log.scope.info('Reading publications.'):
         # publications = list(all_publications(between=(1990, 2018), log=log))
