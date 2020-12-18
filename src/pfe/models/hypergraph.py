@@ -315,7 +315,7 @@ if __name__ == '__main__':
         plot.x.scale('log')
         plot.x.limit(10**-1, 10**3)
 
-        plot.y.label('1 - F(k)')
+        plot.y.label('$1 - F(k)$')
         plot.y.scale('log')
 
         fit.plot_ccdf(ax=plot.ax, label='Empirical')
