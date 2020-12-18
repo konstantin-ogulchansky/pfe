@@ -4,7 +4,7 @@ Fit the degree distribution.
 
 import powerlaw as pl
 
-from pfe.misc.log import Log, Pretty, redirect_stderr_to
+from pfe.misc.log import Log, Pretty, redirect_stderr_to, suppress_stderr
 from pfe.misc.plot import Plot, crosses, circles
 from pfe.misc.style import blue
 from pfe.parse import parse, publications_in
@@ -12,11 +12,14 @@ from pfe.tasks.hypothesis import degree_distribution
 from pfe.tasks.statistics import Statistic
 
 
+weighted: bool = True
+"""Whether to plot the weighted degree distribution."""
+
 tex: bool = True
 """Whether to use TeX in plots."""
 
-weighted: bool = True
-"""Whether to plot the weighted degree distribution."""
+scale: float = 0.43
+"""Scale of the figures."""
 
 
 def plot_dd(statistic: Statistic, fit: pl.Fit):
@@ -58,6 +61,7 @@ def plot_dd(statistic: Statistic, fit: pl.Fit):
     fit.plot_pdf(ax=plot.ax, original_data=True, label='Empirical PDF')
 
     plot.legend()
+    plot.resize(scale=scale)
     plot.save(f'COMP' + '-w' * weighted + '-dd.eps')
 
 
@@ -83,7 +87,8 @@ def plot_pdf(statistic: Statistic, fit: pl.Fit):
     fit.power_law.plot_pdf(ax=plot.ax, label='Power-Law')
     fit.truncated_power_law.plot_pdf(ax=plot.ax, label='Power-Law with Cut-Off')
 
-    plot.legend(title='PDF')
+    plot.legend(location='lower left')
+    plot.resize(scale=scale)
     plot.save('COMP' + '-w' * weighted + '-pdf.eps')
 
 
@@ -108,13 +113,8 @@ def plot_cdf(statistic: Statistic, fit: pl.Fit):
     fit.power_law.plot_cdf(ax=plot.ax, label='Power-Law')
     fit.truncated_power_law.plot_cdf(ax=plot.ax, label='Power-Law with Cut-Off')
 
-    # Unfortunately, for some reason this must be after `fit.plot_whatever`. :(
-    plot.y.ticks([
-        (10 ** -1, r'$10^{-1}$'),
-        (10 ** 0,  r'$10^{ 0}$')
-    ])
-
-    plot.legend(title='CDF', location='lower right')
+    plot.legend(location='lower right')
+    plot.resize(scale=scale)
     plot.save('COMP' + '-w' * weighted + '-cdf.eps')
 
 
@@ -139,13 +139,14 @@ def plot_ccdf(statistic: Statistic, fit: pl.Fit):
     fit.power_law.plot_ccdf(ax=plot.ax, label='Power-Law')
     fit.truncated_power_law.plot_ccdf(ax=plot.ax, label='Power-Law with Cut-Off')
 
-    plot.legend(title='CCDF', location='lower left')
+    plot.legend(location='lower left')
+    plot.resize(scale=scale)
     plot.save('COMP' + '-w' * weighted + '-ccdf.eps')
 
 
 if __name__ == '__main__':
     log: Log = Pretty()
-    log.info('Starting...')
+    log.info('Starting.')
 
     redirect_stderr_to(log.warn)
 
@@ -156,18 +157,18 @@ if __name__ == '__main__':
                  f'{blue | graph.number_of_nodes()} nodes and '
                  f'{blue | graph.number_of_edges()} edges.')
 
-    with log.scope.info('Computing the degree distribution...'):
+    with log.scope.info('Computing the degree distribution.'):
         statistic = degree_distribution(graph, weighted)
 
-    with log.scope.info('Fitting the hypothesis...'):
+    with log.scope.info('Fitting the hypothesis.'):
         fit = pl.Fit(list(statistic.sequence()), discrete=True)
 
-        with log.scope.info('Estimating power-law parameters...'):
+        with log.scope.info('Estimating power-law parameters.'):
             log.info(f'α: {fit.power_law.alpha}')
             log.info(f'σ: {fit.power_law.sigma}')
             log.info(f'x: {[fit.power_law.xmin, fit.power_law.xmax]}')
 
-        with log.scope.info('Estimating power-law with cutoff parameters...'):
+        with log.scope.info('Estimating power-law with cutoff parameters.'):
             log.info(f'α: {fit.truncated_power_law.alpha}')
             log.info(f'λ: {fit.truncated_power_law.Lambda}')
             log.info(f'x: {[fit.truncated_power_law.xmin, fit.truncated_power_law.xmax]}')
@@ -177,7 +178,7 @@ if __name__ == '__main__':
         if not fit.xmax == fit.power_law.xmax == fit.truncated_power_law.xmax:
             log.warn('`xmax` differs.')
 
-    with log.scope.info('Comparing distributions...'):
+    with log.scope.info('Comparing distributions.'), suppress_stderr():
         comparison = {}
 
         for a in fit.supported_distributions:
@@ -190,11 +191,11 @@ if __name__ == '__main__':
             file.write('\n'.join(f'{a:<23} {b:<23} {comparison[a, b]}'
                                  for a, b in comparison))
 
-    with log.scope.info('Plotting the degree distribution...'):
+    with log.scope.info('Plotting the degree distribution.'):
         plot_dd(statistic, fit)
-    with log.scope.info('Plotting theoretical PDFs...'):
+    with log.scope.info('Plotting theoretical PDFs.'):
         plot_pdf(statistic, fit)
-    with log.scope.info('Plotting theoretical CDFs...'):
+    with log.scope.info('Plotting theoretical CDFs.'):
         plot_cdf(statistic, fit)
-    with log.scope.info('Plotting theoretical CCDfs...'):
+    with log.scope.info('Plotting theoretical CCDfs.'):
         plot_ccdf(statistic, fit)

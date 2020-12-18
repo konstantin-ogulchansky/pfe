@@ -98,7 +98,9 @@ class Plot:
 
         # Set the default style.
         kwargs.setdefault('shadow', True)
+        kwargs.setdefault('fancybox', True)
         kwargs.setdefault('edgecolor', 'black')
+        kwargs.setdefault('prop', {'size': 8})
 
         if location is not None:
             kwargs['loc'] = location
@@ -107,6 +109,9 @@ class Plot:
 
         frame = legend.get_frame()
         frame.set_linewidth(0.5)
+
+        title = legend.get_title()
+        title.set_fontsize(10)
 
     def show(self):
         """Shows the plot."""
