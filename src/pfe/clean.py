@@ -15,7 +15,7 @@ def clean(data: dict[str, Any], log: Log = Nothing()) -> list[dict[str, Any]]:
 
     :param data: a dictionary that represents a JSON file
                  with collaboration data.
-    :param log: logs
+    :param log: an instance of `Log` to log the execution with.
 
     :returns: a list that contains cleaned
               information about publications.
