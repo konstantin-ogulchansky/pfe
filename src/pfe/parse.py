@@ -15,7 +15,7 @@ from pfe.misc.style import magenta
 
 
 def all_publications(between: Tuple[int, int],
-                     **kwargs: Any) -> list[dict]:
+                     **kwargs: Any) -> Iterable[dict]:
     """Returns a list of publications in all disciplines between the specified years.
 
     :param between: a tuple of two integers that specifies the (inclusive) year range.
@@ -38,7 +38,7 @@ def all_publications(between: Tuple[int, int],
 
 def publications_in(*domains: str,
                     between: Tuple[int, int],
-                    **kwargs: Any) -> list[dict]:
+                    **kwargs: Any) -> Iterable[dict]:
     """Returns a list of publications related to the specified domains
     between the specified years.
 
@@ -87,7 +87,7 @@ def publications_in(*domains: str,
 def publications_from(paths: Union[str, list[str]],
                       skip_100: bool = True,
                       where: Optional[Callable] = None,
-                      log: Log = Nothing()) -> list[dict]:
+                      log: Log = Nothing()) -> Iterable[dict]:
     """Returns a list of publications from files specified
     by the provided `paths`.
 
