@@ -168,9 +168,10 @@ if __name__ == '__main__':
     with log.scope.info('Generating a graph.'):
         parameters = Parameters(
             m=5,
-            p=0.2443,
-            q=0.9428,
-            k=1037021,
+            n=10**4,
+            p=0.3,
+            q=0.8,
+            # k=1037021,
         )
 
         graph = generate(parameters, log=log)
@@ -194,7 +195,7 @@ if __name__ == '__main__':
         log.info(f'Log-likelihood (PL, PL w/ C): {blue | comparison}.')
 
     with log.scope.info('Plotting the distribution.'), suppress_stderr():
-        plot = Plot(title='Degree Distribution')
+        plot = Plot(title='Degree Distribution (new)')
         plot.scatter(distribution)
 
         plot.x.scale('log')
@@ -210,7 +211,7 @@ if __name__ == '__main__':
         plot.show()
 
     with log.scope.info('Plotting the fit.'), suppress_stderr():
-        plot = Plot(title='Fit')
+        plot = Plot(title='Fit (new)')
         plot.scatter(truncated.normalized())
 
         plot.x.scale('log')
@@ -223,6 +224,24 @@ if __name__ == '__main__':
         fit.plot_pdf(ax=plot.ax, label='Empirical')
         fit.power_law.plot_pdf(ax=plot.ax, label='Power Law')
         fit.truncated_power_law.plot_pdf(ax=plot.ax, label='Power Law with Cutoff')
+
+        plot.legend()
+        plot.show()
+
+    with log.scope.info('Plotting CCDFs.'):
+        plot = Plot(title='CCDF (new)')
+        plot.scatter(truncated.ccdf())
+
+        plot.x.label('Degree $k$')
+        plot.x.scale('log')
+        plot.x.limit(10**-1, 10**3)
+
+        plot.y.label('1 - F(k)')
+        plot.y.scale('log')
+
+        fit.plot_ccdf(ax=plot.ax, label='Empirical')
+        fit.power_law.plot_ccdf(ax=plot.ax, label='Power-Law')
+        fit.truncated_power_law.plot_ccdf(ax=plot.ax, label='Power-Law with Cut-Off')
 
         plot.legend()
         plot.show()

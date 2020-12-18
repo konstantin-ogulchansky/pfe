@@ -292,11 +292,10 @@ if __name__ == '__main__':
 
         fit = pl.Fit(list(distribution.sequence()), discrete=True)
 
-        x_min = fit.xmin
-        x_max = fit.xmax
+        truncated = distribution.truncate(fit.xmin, fit.xmax)
 
     with log.scope.info('Plotting the distribution.'):
-        plot = Plot(title='Degree Distribution II')
+        plot = Plot(title='Degree Distribution (hyper)')
         plot.scatter(distribution)
 
         plot.x.label('Degree $k$')
@@ -308,9 +307,27 @@ if __name__ == '__main__':
 
         plot.show()
 
+    with log.scope.info('Plotting CCDFs.'):
+        plot = Plot(title='CCDF (hyper)')
+        plot.scatter(truncated.ccdf())
+
+        plot.x.label('Degree $k$')
+        plot.x.scale('log')
+        plot.x.limit(10**-1, 10**3)
+
+        plot.y.label('1 - F(k)')
+        plot.y.scale('log')
+
+        fit.plot_ccdf(ax=plot.ax, label='Empirical')
+        fit.power_law.plot_ccdf(ax=plot.ax, label='Power-Law')
+        fit.truncated_power_law.plot_ccdf(ax=plot.ax, label='Power-Law with Cut-Off')
+
+        plot.legend()
+        plot.show()
+
     with log.scope.info('Plotting the fit.'), suppress_stderr():
-        plot = Plot(title='Fit')
-        plot.scatter(distribution.truncate(x_min, x_max).normalized())
+        plot = Plot(title='Fit (hyper)')
+        plot.scatter(truncated.normalized())
 
         plot.x.label('Degree $k$')
         plot.x.scale('log')

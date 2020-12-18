@@ -421,7 +421,7 @@ if __name__ == '__main__':
         distribution = Statistic(Counter(degrees))
 
     with log.scope.info('Plotting the distribution.'):
-        plot = Plot(title=r'Degree Distribution I')
+        plot = Plot(title='Degree Distribution (old)')
         plot.scatter(distribution)
 
         plot.x.label('Degree $k$')
@@ -431,4 +431,40 @@ if __name__ == '__main__':
         plot.y.label('Number of Nodes with Degree $k$')
         plot.y.scale('log')
 
+        plot.show()
+
+    with log.scope.info('Plotting CCDFs.'):
+        plot = Plot(title='CCDF (old)')
+        plot.scatter(truncated.ccdf())
+
+        plot.x.label('Degree $k$')
+        plot.x.scale('log')
+        plot.x.limit(10**-1, 10**3)
+
+        plot.y.label('1 - F(k)')
+        plot.y.scale('log')
+
+        fit.plot_ccdf(ax=plot.ax, label='Empirical')
+        fit.power_law.plot_ccdf(ax=plot.ax, label='Power-Law')
+        fit.truncated_power_law.plot_ccdf(ax=plot.ax, label='Power-Law with Cut-Off')
+
+        plot.legend()
+        plot.show()
+
+    with log.scope.info('Plotting the fit.'), suppress_stderr():
+        plot = Plot(title='Fit (old)')
+        plot.scatter(truncated.normalized())
+
+        plot.x.label('Degree $k$')
+        plot.x.scale('log')
+        plot.x.limit(10**-1, 10**3)
+
+        plot.y.label('Fraction of Nodes with Degree $k$')
+        plot.y.scale('log')
+
+        fit.plot_pdf(ax=plot.ax, label='Empirical')
+        fit.power_law.plot_pdf(ax=plot.ax, label='Power-Law')
+        fit.truncated_power_law.plot_pdf(ax=plot.ax, label='Power-Law with Cut-Off')
+
+        plot.legend()
         plot.show()
