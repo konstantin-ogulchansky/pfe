@@ -168,10 +168,9 @@ if __name__ == '__main__':
     with log.scope.info('Generating a graph.'):
         parameters = Parameters(
             m=5,
-            n=10**4,
-            p=0.3,
-            q=0.8,
-            # k=1037021,
+            p=0.2443,
+            q=0.9428,
+            k=1037021,
         )
 
         graph = generate(parameters, log=log)
