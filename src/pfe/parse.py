@@ -31,7 +31,7 @@ def all_publications(between: Tuple[int, int],
         directory = directory.parent
 
     domains = \
-        [x.name for x in (directory / 'data' / 'clean').iterdir()]
+        (x.name for x in (directory / 'data' / 'clean').iterdir())
 
     return publications_in(*domains, between=between, **kwargs)
 
@@ -61,7 +61,7 @@ def publications_in(*domains: str,
         |- .gitignore
         ...
 
-    where {domain-i} is a domain from the provided `domains` and
+    Here {domain-i} is a domain from the provided `domains` and
     {year} is a year in the range as specified by `between`.
 
     :param domains: a sequence of domain codes ('COMP', 'MATH', 'PHYS', etc.).
