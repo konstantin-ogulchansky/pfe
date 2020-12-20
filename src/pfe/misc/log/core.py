@@ -132,10 +132,3 @@ class Record:
         :return: a mapped ``Record``.
         """
         return Record(function(self._item), self._level, self._timestamp)
-
-    def refreshed(self) -> 'Record':
-        """Returns a new ``Record`` with a refreshed timestamp.
-
-        :return: a refreshed ``Record``.
-        """
-        return Record(self._item, self._level)

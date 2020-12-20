@@ -76,6 +76,9 @@ def generate(parameters: Parameters, log: Log = Nothing()) -> nx.Graph:
            a power-law distribution with an exponential cutoff",
            Social Networks, vol. 29, no. 1, pp. 70–80, 2007.
            https://doi.org/10.1016/j.socnet.2005.12.003
+
+    :param parameters: parameters of the model.
+    :param log: an instance of ``Log`` to log the execution with.
     """
 
     active_urns: dict[int, set[int]] = {0: set()}

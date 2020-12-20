@@ -5,64 +5,18 @@ Fit the degree distribution.
 import powerlaw as pl
 
 from pfe.misc.log import Log, Pretty, redirect_stderr_to, suppress_stderr
-from pfe.misc.plot import Plot, crosses, circles
+from pfe.misc.plot import Plots, crosses, circles
 from pfe.misc.style import blue
 from pfe.parse import parse, publications_in
 from pfe.tasks.hypothesis import degree_distribution
 from pfe.tasks.statistics import Statistic
 
 
-weighted: bool = True
+weighted: bool = False
 """Whether to plot the weighted degree distribution."""
 
 tex: bool = True
 """Whether to use TeX in plots."""
-
-scale: float = 0.43
-"""Scale of the figures."""
-
-
-def plot_dd(statistic: Statistic, fit: pl.Fit):
-    """Plots the degree distribution."""
-
-    global tex, weighted
-
-    normalized = statistic.normalized()
-    truncated = statistic.truncate(fit.xmin, fit.xmax)
-
-    included = {x: y for x, y in normalized.items() if x in truncated}
-    excluded = {x: y for x, y in normalized.items() if x not in truncated}
-
-    plot = Plot(tex=tex)
-
-    plot.x.label('Weighted ' * weighted + 'Degree $k$')
-    plot.x.scale('log')
-    plot.x.limit(10 ** -1, 10 ** 4)
-
-    plot.y.label('$P' + '_w' * weighted + '(k)$')
-    plot.y.scale('log')
-    plot.y.limit(10 ** -6, 10 ** 0)
-
-    plot.scatter(excluded, **crosses, label='Excluded Degrees')
-    plot.scatter(included, **circles, label='Included Degrees')
-
-    if fit.xmin is not None:
-        dx = 0.75 if weighted else 2.25
-
-        plot.x.line(fit.xmin)
-        plot.text(fit.xmin - dx, 1.25 * 10**-4, f'$x_{{min}} = {fit.xmin:g}$', rotation=90)
-
-    if fit.xmax is not None:
-        dx = 0.75 if weighted else 2.25
-
-        plot.x.line(fit.xmax)
-        plot.text(fit.xmax - dx, 1.25 * 10**-4, f'$x_{{max}} = {fit.xmax:g}$', rotation=90)
-
-    fit.plot_pdf(ax=plot.ax, original_data=True, label='Empirical PDF')
-
-    plot.legend()
-    plot.resize(scale=scale)
-    plot.save(f'COMP' + '-w' * weighted + '-dd.eps')
 
 
 def plot_pdf(statistic: Statistic, fit: pl.Fit):
@@ -70,26 +24,63 @@ def plot_pdf(statistic: Statistic, fit: pl.Fit):
 
     global tex, weighted
 
+    normalized = statistic.normalized()
     truncated = statistic.truncate(fit.xmin, fit.xmax)
 
-    plot = Plot(tex=tex)
-    plot.scatter(truncated.normalized())
+    plots = Plots(rows=2, cols=1, tex=tex)
 
-    plot.x.label('Weighted ' * weighted + 'Degree $k$')
-    plot.x.scale('log')
-    plot.x.limit(10 ** -1, 10 ** 4)
+    # The top subplot.
+    top = plots[0, 0]
 
-    plot.y.label('$P' + '_w' * weighted + '(k)$')
-    plot.y.scale('log')
-    plot.y.limit(10 ** -6, 10 ** 0)
+    included = {x: y for x, y in normalized.items() if x in truncated}
+    excluded = {x: y for x, y in normalized.items() if x not in truncated}
 
-    fit.plot_pdf(ax=plot.ax, label='Empirical')
-    fit.power_law.plot_pdf(ax=plot.ax, label='Power-Law')
-    fit.truncated_power_law.plot_pdf(ax=plot.ax, label='Power-Law with Cut-Off')
+    top.scatter(excluded, **crosses, label='Excluded Degrees')
+    top.scatter(included, **circles, label='Included Degrees')
 
-    plot.legend(location='lower left')
-    plot.resize(scale=scale)
-    plot.save('COMP' + '-w' * weighted + '-pdf.eps')
+    top.x.scale('log')
+    top.x.limit(10 ** 0, 10 ** 4)
+
+    top.y.label('$P' + '_w' * weighted + '(k)$')
+    top.y.scale('log')
+    top.y.limit(10 ** -6, 10 ** 0)
+
+    if fit.xmin is not None:
+        dx = 0.75 if weighted else 2.25
+
+        top.x.line(fit.xmin)
+        top.text(fit.xmin - dx, 1.25 * 10**-4, f'$x_{{min}} = {fit.xmin:g}$', rotation=90)
+
+    if fit.xmax is not None:
+        dx = 0.75 if weighted else 2.25
+
+        top.x.line(fit.xmax)
+        top.text(fit.xmax - dx, 1.25 * 10**-4, f'$x_{{max}} = {fit.xmax:g}$', rotation=90)
+
+    fit.plot_pdf(ax=top.ax, original_data=True, label='Empirical PDF')
+
+    top.legend(location='lower left')
+
+    # The bottom subplot.
+    bottom = plots[1, 0]
+    bottom.scatter(truncated.normalized())
+
+    bottom.x.label('Weighted ' * weighted + 'Degree $k$')
+    bottom.x.scale('log')
+    bottom.x.limit(10 ** 0, 10 ** 4)
+
+    bottom.y.label('$P' + '_w' * weighted + '(k)$')
+    bottom.y.scale('log')
+    bottom.y.limit(10 ** -6, 10 ** 0)
+
+    fit.plot_pdf(ax=bottom.ax, label='Empirical')
+    fit.power_law.plot_pdf(ax=bottom.ax, label='Power-Law')
+    fit.truncated_power_law.plot_pdf(ax=bottom.ax, label='Power-Law with Cut-Off')
+
+    bottom.legend(location='lower left')
+
+    # Saving the plot.
+    plots.save('COMP' + '-w' * weighted + '-pdf.eps')
 
 
 def plot_cdf(statistic: Statistic, fit: pl.Fit):
@@ -99,49 +90,43 @@ def plot_cdf(statistic: Statistic, fit: pl.Fit):
 
     truncated = statistic.truncate(fit.xmin, fit.xmax)
 
-    plot = Plot(tex=tex)
-    plot.scatter(truncated.cdf())
+    plots = Plots(rows=2, cols=1, tex=tex)
 
-    plot.x.label('Weighted ' * weighted + 'Degree $k$')
-    plot.x.scale('log')
-    plot.x.limit(10 ** -1, 10 ** 4)
+    # The top subplot.
+    top = plots[0, 0]
+    top.scatter(truncated.cdf())
 
-    plot.y.label('$F' + '_w' * weighted + '(k)$')
-    plot.y.scale('log')
+    top.x.scale('log')
+    top.x.limit(10 ** 0, 10 ** 4)
 
-    fit.plot_cdf(ax=plot.ax, label='Empirical')
-    fit.power_law.plot_cdf(ax=plot.ax, label='Power-Law')
-    fit.truncated_power_law.plot_cdf(ax=plot.ax, label='Power-Law with Cut-Off')
+    top.y.label('$F' + '_w' * weighted + '(k)$')
+    top.y.scale('log')
 
-    plot.legend(location='lower right')
-    plot.resize(scale=scale)
-    plot.save('COMP' + '-w' * weighted + '-cdf.eps')
+    fit.plot_cdf(ax=top.ax, label='Empirical')
+    fit.power_law.plot_cdf(ax=top.ax, label='Power-Law')
+    fit.truncated_power_law.plot_cdf(ax=top.ax, label='Power-Law with Cut-Off')
 
+    top.legend(location='lower right')
 
-def plot_ccdf(statistic: Statistic, fit: pl.Fit):
-    """Plots theoretical CCDFs."""
+    # The bottom subplot.
+    bottom = plots[1, 0]
+    bottom.scatter(truncated.ccdf())
 
-    global tex, weighted
+    bottom.x.label('Weighted ' * weighted + 'Degree $k$')
+    bottom.x.scale('log')
+    bottom.x.limit(10 ** 0, 10 ** 4)
 
-    truncated = statistic.truncate(fit.xmin, fit.xmax)
+    bottom.y.label('$\\overline{F}' + '_w' * weighted + '(k)$')
+    bottom.y.scale('log')
 
-    plot = Plot(tex=tex)
-    plot.scatter(truncated.ccdf())
+    fit.plot_ccdf(ax=bottom.ax, label='Empirical')
+    fit.power_law.plot_ccdf(ax=bottom.ax, label='Power-Law')
+    fit.truncated_power_law.plot_ccdf(ax=bottom.ax, label='Power-Law with Cut-Off')
 
-    plot.x.label('Weighted ' * weighted + 'Degree $k$')
-    plot.x.scale('log')
-    plot.x.limit(10 ** -1, 10 ** 4)
+    bottom.legend(location='lower left')
 
-    plot.y.label('$\\overline{F}' + '_w' * weighted + '(k)$')
-    plot.y.scale('log')
-
-    fit.plot_ccdf(ax=plot.ax, label='Empirical')
-    fit.power_law.plot_ccdf(ax=plot.ax, label='Power-Law')
-    fit.truncated_power_law.plot_ccdf(ax=plot.ax, label='Power-Law with Cut-Off')
-
-    plot.legend(location='lower left')
-    plot.resize(scale=scale)
-    plot.save('COMP' + '-w' * weighted + '-ccdf.eps')
+    # Saving the plot.
+    plots.save('COMP' + '-w' * weighted + '-ccdf.eps')
 
 
 if __name__ == '__main__':
@@ -191,11 +176,7 @@ if __name__ == '__main__':
             file.write('\n'.join(f'{a:<23} {b:<23} {comparison[a, b]}'
                                  for a, b in comparison))
 
-    with log.scope.info('Plotting the degree distribution.'):
-        plot_dd(statistic, fit)
     with log.scope.info('Plotting theoretical PDFs.'):
         plot_pdf(statistic, fit)
     with log.scope.info('Plotting theoretical CDFs.'):
         plot_cdf(statistic, fit)
-    with log.scope.info('Plotting theoretical CCDfs.'):
-        plot_ccdf(statistic, fit)

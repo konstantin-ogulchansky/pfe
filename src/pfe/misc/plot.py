@@ -113,10 +113,6 @@ class Plot:
         title = legend.get_title()
         title.set_fontsize(10)
 
-    def show(self):
-        """Shows the plot."""
-        self.fig.show()
-
     def resize(self,
                width: Optional[float] = None,
                height: Optional[float] = None,
@@ -137,14 +133,26 @@ class Plot:
         self.fig.set_size_inches(width * scale, height * scale)
         self.fig.tight_layout()
 
-    def save(self, path: str, dpi: Optional[int] = None, and_show: bool = True):
+    def show(self, tight: bool = True):
+        """Shows the plot."""
+
+        if tight:
+            self.fig.tight_layout()
+
+        self.fig.show()
+
+    def save(self, path: str, dpi: Optional[int] = None, tight: bool = True, and_show: bool = True):
         """Saves the plot (and probably shows it too).
 
         :param path: the path to a file to save the plot to.
         :param dpi: the resolution of the figure in DPI (dots per inch).
+        :param tight: whether the layout should be tight.
         :param and_show: whether to show the plot after saving;
                          very convenient with PyCharm's scientific mode.
         """
+
+        if tight:
+            self.fig.tight_layout()
 
         if dpi is not None:
             self.fig.savefig(path, dpi=dpi)
@@ -152,7 +160,59 @@ class Plot:
             self.fig.savefig(path)
 
         if and_show:
-            self.show()
+            self.show(tight=False)
+
+
+class Plots:
+    """..."""
+
+    def __init__(self, rows: int, cols: int, tex: bool = False):
+        if tex:
+            # Must be before `plt.gca()`.
+            plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern Roman']})
+            plt.rc('text', usetex=True)
+
+        self._rows = rows
+        self._cols = cols
+
+        fig, axs = plt.subplots(rows, cols)
+        axs = axs.reshape((rows, cols))
+
+        self.fig: plt.Figure = fig
+        self.axs: list[list[Plot]] = [[Plot(ax) for ax in row] for row in axs]
+
+    def __getitem__(self, pair: Tuple[int, int]) -> Plot:
+        """Returns a subplot at the specified position."""
+        return self.axs[pair[0]][pair[1]]
+
+    def show(self, tight: bool = True):
+        """Shows the plot."""
+
+        if tight:
+            self.fig.tight_layout()
+
+        self.fig.show()
+
+    def save(self, path: str, dpi: Optional[float] = None, tight: bool = True, and_show: bool = True):
+        """Saves the plot (and probably shows it too).
+
+        :param path: the path to a file to save the plot to.
+        :param dpi: the resolution of the figure in DPI (dots per inch).
+        :param tight: whether the layout should be tight.
+        :param and_show: whether to show the plot after saving;
+                         very convenient with PyCharm's scientific mode.
+        """
+
+        if tight:
+            self.fig.tight_layout()
+
+        if dpi is not None:
+            self.fig.savefig(path, dpi=dpi)
+        else:
+            self.fig.savefig(path)
+
+        if and_show:
+            self.show(tight=False)
 
 
 class XAxis:
