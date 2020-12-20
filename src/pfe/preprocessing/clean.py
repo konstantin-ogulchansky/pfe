@@ -105,8 +105,8 @@ if __name__ == '__main__':
     # Cleaned data will be stored in a directory
     # with equivalent structure.
 
-    old_directory = Path('../../data/raw')
-    new_directory = Path('../../data/test')
+    old_directory = Path('../../../data/raw')
+    new_directory = Path('../../../data/clean')
 
     # Create new folder for cleaned data.
     if new_directory.exists():

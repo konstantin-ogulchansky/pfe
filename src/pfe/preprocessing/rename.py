@@ -15,7 +15,7 @@ if __name__ == '__main__':
     log = Pretty()
     log.info('Starting.')
 
-    data = Path('../../data/graph')
+    data = Path('../../../data/graph')
 
     # Reading a graph.
     if (data / 'nx_full_graph.txt').is_file():

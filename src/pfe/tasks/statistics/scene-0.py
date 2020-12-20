@@ -7,7 +7,7 @@ Compute different metrics, such as
 
 from pfe.misc.log import Log, Pretty
 from pfe.misc.style import blue
-from pfe.parse import parse, all_publications, publications_in
+from pfe.parse import parse, publications_in
 from pfe.tasks.statistics import number_of_authors, number_of_publications, number_of_collaborations
 
 
@@ -16,7 +16,6 @@ if __name__ == '__main__':
     log.info('Starting.')
 
     with log.scope.info('Reading publications.'):
-        # publications = list(all_publications(between=(1990, 2018), log=log))
         publications = list(publications_in('COMP', between=(1990, 1996), log=log))
 
     with log.scope.info('Constructing a graph.'):
