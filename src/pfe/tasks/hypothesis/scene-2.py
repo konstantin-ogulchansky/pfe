@@ -20,7 +20,7 @@ if __name__ == '__main__':
     np.set_printoptions(suppress=True)
 
     log: Log = Pretty()
-    log.info('Starting...')
+    log.info('Starting.')
 
     redirect_stderr_to(log.warn)
 
@@ -35,7 +35,7 @@ if __name__ == '__main__':
         statistic = degree_distribution(graph, weighted=True)
 
     with log.scope.info('Fitting the hypothesis.'):
-        fit = pl.Fit(list(statistic.sequence()), discrete=True)
+        fit = pl.Fit(statistic.as_list(), discrete=True)
 
         x_min = int(fit.xmin or min(statistic.keys()))
         x_max = int(fit.xmax or max(statistic.keys()))

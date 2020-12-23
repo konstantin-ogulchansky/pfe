@@ -84,12 +84,16 @@ class Statistic:
 
         return Statistic(truncate(self._p))
 
-    def sequence(self) -> Iterable[int]:
+    def as_sequence(self) -> Iterable[int]:
         """Returns the distribution values as a sequence."""
 
         for k, n in self._p.items():
             while (n := n - 1) >= 0:
                 yield k
+
+    def as_list(self) -> list[int]:
+        """Returns the distribution values as a list."""
+        return list(self.as_sequence())
 
     def as_dict(self) -> dict[int, int]:
         """Returns the distribution values as a dictionary."""

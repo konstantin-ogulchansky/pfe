@@ -122,11 +122,8 @@ def publications_from(paths: Union[str, list[str]],
 
         return True
 
-    def quoted(string: str) -> str:
-        return '"' + string + '"'
-
     for i, path in enumerate(paths, start=1):
-        log.info(f'Reading {magenta | quoted(path.name)}. [{percents(i, len(paths))}]')
+        log.info(f'Reading "{magenta | path.name}". [{percents(i, len(paths))}]')
 
         with open(path, 'r') as file:
             publications = json.load(file)
@@ -136,18 +133,19 @@ def publications_from(paths: Union[str, list[str]],
                 yield publication
 
 
-def parse(publications: Iterable[dict], into: Optional[nx.Graph] = None) -> nx.Graph:
+def parse(publications: Iterable[dict], self_loops: bool = True, to: Optional[nx.Graph] = None) -> nx.Graph:
     """Parses a collaboration network from JSON files and
-    constructs a social collaboration graph.
+    constructs a collaboration graph.
 
     TODO:
         - Describe how publications are parsed.
         - Describe how attributes are assigned.
 
     :param publications: publications represented as dictionaries with JSON.
-    :param into: a graph to add parsed nodes and edges into (optional).
+    :param self_loops: whether to add self-loops to the graph.
+    :param to: a graph to add parsed nodes and edges to (optional).
 
-    :return: a constructed social collaboration graph.
+    :return: the constructed collaboration graph.
     """
 
     def unique(items: list, select: Callable) -> list:
@@ -161,7 +159,7 @@ def parse(publications: Iterable[dict], into: Optional[nx.Graph] = None) -> nx.G
 
         return result
 
-    graph = into or nx.Graph()
+    graph = to if to is not None else nx.Graph()
 
     for publication in publications:
         authors = publication['authors']
@@ -183,13 +181,13 @@ def parse(publications: Iterable[dict], into: Optional[nx.Graph] = None) -> nx.G
         for i in range(n):
             u = int(authors[i]['id'])
 
-            if not graph.has_edge(u, u):
+            if self_loops and not graph.has_edge(u, u):
                 graph.add_edge(u, u, weight=0, collaborations=0)
 
-            # We need to add `1 / (n * 2)` because self-loops are
-            # counted twice in a degree.
-            graph.edges[u, u]['weight'] += Decimal(1) / Decimal(n * 2)
-            graph.edges[u, u]['collaborations'] += 1
+                # We need to add `1 / (n * 2)` because self-loops are
+                # counted twice in a degree.
+                graph.edges[u, u]['weight'] += Decimal(1) / Decimal(n * 2)
+                graph.edges[u, u]['collaborations'] += 1
 
             for j in range(i + 1, n):
                 v = int(authors[j]['id'])
@@ -197,7 +195,7 @@ def parse(publications: Iterable[dict], into: Optional[nx.Graph] = None) -> nx.G
                 if not graph.has_edge(u, v):
                     graph.add_edge(u, v, weight=0, collaborations=0)
 
-                graph.edges[u, v]['weight'] += Decimal(1) / Decimal(n)
+                graph.edges[u, v]['weight'] += Decimal(1) / Decimal(n - 1 + self_loops)
                 graph.edges[u, v]['collaborations'] += 1
 
     return graph

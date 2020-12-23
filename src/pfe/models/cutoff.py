@@ -208,7 +208,7 @@ if __name__ == '__main__':
         distribution = degree_distribution(graph)
 
     with log.scope.info('Fitting a power law.'), suppress_stderr():
-        fit = pl.Fit(list(distribution.sequence()), discrete=True)
+        fit = pl.Fit(distribution.as_list(), discrete=True)
 
         comparison = fit.loglikelihood_ratio('power_law', 'truncated_power_law')
         truncated = distribution.truncate(fit.xmin, fit.xmax)

@@ -146,7 +146,7 @@ if __name__ == '__main__':
         statistic = degree_distribution(graph, weighted)
 
     with log.scope.info('Fitting the hypothesis.'):
-        fit = pl.Fit(list(statistic.sequence()), discrete=True)
+        fit = pl.Fit(statistic.as_list(), discrete=True)
 
         with log.scope.info('Estimating power-law parameters.'):
             log.info(f'α: {fit.power_law.alpha}')
