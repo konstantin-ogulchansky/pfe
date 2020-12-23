@@ -23,7 +23,7 @@ class Distribution:
 
     def __init__(self, p: Union[Iterable[int], dict[int, int]]):
         if isinstance(p, dict):
-            self._p = p
+            self._p = dict(sorted(p.items()))
         else:
             self._p = Counter(p)
 
@@ -106,7 +106,7 @@ class Distribution:
 
         def truncate(x: dict[int, Any]) -> dict[int, Any]:
             if min is None and max is None:
-                return dict(x)  # A copy of the original dictionary.
+                return x
 
             def in_range(x):
                 if min is not None and x < min:
@@ -265,6 +265,10 @@ def communities_per_publication(graph: nx.Graph, publications: Any) -> Distribut
 
     :return: the computed ``Distribution``.
     """
+
+    graph = graph.copy()
+    for edge in graph.edges:
+        graph.edges[edge]['weight'] = float(graph.edges[edge]['weight'])
 
     communities = cm.best_partition(graph)
     distribution = {}
