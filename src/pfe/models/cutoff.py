@@ -14,7 +14,7 @@ from pfe.misc.log import Log, Pretty, Nothing, suppress_stderr
 from pfe.misc.log.misc import percents
 from pfe.misc.plot import Plot
 from pfe.misc.style import blue, magenta
-from pfe.tasks.hypothesis import degree_distribution
+from pfe.tasks.distributions import degree_distribution
 
 
 @dataclass

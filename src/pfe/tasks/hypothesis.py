@@ -1,90 +1,46 @@
 """
-In order to test the hypothesis, 3 steps should be taken:
-
-  1. Fit the data: this step is performed in order to find
-     the optimal parameters of different distributions that fit
-     the empirical data in the best way possible.
-
-  2. Calculate the goodness-of-fit (Clauset et al.).
-
-  3. Compare distributions via a likelihood ratio test: this step is
-     needed to check which of the distributions is "the best" one
-     since sometimes power law is selected by a mistake.
-     For example, we could compare 'power-law' and 'lognormal' distributions
-     (and, of course, other distributions).
-
-  4. Test the hypothesis via the K-S test or the Pearson's chi-square test.
-     - Test regular data?
-     - Test binned data?
+TODO.
 """
 
 import random
-from decimal import Decimal
 from typing import Iterable, Sequence
 
-import networkx as nx
+import powerlaw as pl
 
 from pfe.misc.log.misc import percents
-from pfe.tasks.distributions import Distribution
 from pfe.misc.log import Log, Nothing
-
-
-def degree_distribution(graph: nx.Graph, weighted: bool = False) -> Distribution:
-    """Computes the degree distribution distribution.
-
-    :param graph: a `networkx.Graph`.
-    :param weighted: whether the degree distribution should be weighted.
-
-    :return: a dictionary representing the distribution,
-             where key is a degree and a value is the number
-             of times this degree is found in the graph.
-    """
-
-    distribution = {}
-
-    for node in graph.nodes:
-        if weighted:
-            degrees = graph.degree(weight='weight')
-            degree = degrees[node]
-
-            if isinstance(degree, Decimal):
-                degree = int(degree.quantize(Decimal('1')))
-            else:
-                degree = round(degree)
-        else:
-            degree = graph.degree[node]
-
-        distribution.setdefault(degree, 0)
-        distribution[degree] += 1
-
-    return Distribution(distribution)
 
 
 def sample(pdf: dict[int, float],
            size: int,
            resample: bool = False,
-           error: bool = False,
            log: Log = Nothing()) -> Iterable[int]:
     """Draws a sample of the provided ``size`` according to ``pdf``.
 
     This function implements the inverse transform sampling for drawing a sample
     according to an arbitrary distribution, defined by the provided PDF.
 
-    Example:
-    ::
+    Example. ::
+
         x = list(sorted(truncated.keys()))
         y = fit.truncated_power_law.pdf(x)
 
         pdf = dict(zip(x, y))
 
         sampled = sample(pdf, size=1000, resample=True)
-        sampled = Statistic(Counter(sampled))
+        sampled = Statistic(sampled)
 
     .. [1] Wikipedia,
        https://en.wikipedia.org/wiki/Inverse_transform_sampling
 
-    .. [2] "Inverse Transform Sampling",
-       https://stephens999.github.io/fiveMinuteStats/inverse_transform_sampling.html
+    :param pdf: the probability density function
+                according to which a sample should be drawn.
+    :param size: the size of a sample to draw.
+    :param resample: whether to resample an element in a case
+                     if the generated probability is out of bounds of ``pdf``.
+    :param log: an instance of ``Log`` to log steps of execution with.
+
+    :return: the generated sample.
     """
 
     x = list(sorted(pdf.keys()))
@@ -104,21 +60,33 @@ def sample(pdf: dict[int, float],
                 p = q
 
         if resample:
-            log.warn(f'The value for `u` = {u} was not found; '
-                     f'resampling.')
+            log.warn(f'An element with `u` = {u} was not found; resampling.')
             return draw(i)
 
-        message = \
-            f'The value for `u` = {u} was not found; ' \
-            f'returning {(m := max(x))}.'
-
-        if error:
-            raise ValueError(message)
-        else:
-            log.error(message)
-            return m
+        raise ValueError(f'An element with `u` = {u} was not found.')
 
     return (draw(i) for i in range(1, size + 1))
+
+
+def p_value(distribution: pl.Distribution, samples: Iterable[list[int]]) -> float:
+    """Estimates p-value that can be used to test whether
+    the provided distribution is a plausible fit to the data.
+
+    .. [1] Aaron Clauset, Cosma Rohilla Shalizi, and M. E. J. Newman.
+           "Power-law distributions in empirical data",
+           SIAM Review, 51(4):661–703, November 2009.
+           https://doi.org/10.1137/070710111
+    """
+
+    ks = distribution.KS()
+    p = 0
+    n = 0
+
+    for sample in samples:
+        p += distribution.KS(sample) > ks
+        n += 1
+
+    return p / n
 
 
 def histogram(data: dict[int, float], bins: Sequence[float]) -> list[float]:
@@ -152,31 +120,3 @@ def histogram(data: dict[int, float], bins: Sequence[float]) -> list[float]:
         binned.append(sum(data[x] for x in data if within(x)))
 
     return binned
-
-
-def chi_squared(observed: dict[int, int], expected: dict[int, float]) -> float:
-    """...
-
-    Should rather refer to ``scipy.stats.chisquare``.
-
-    .. [1] Wikipedia,
-       https://www.wikiwand.com/en/Pearson%27s_chi-squared_test
-
-    .. [2] "Chi-Square Goodness-of-Fit Test",
-       https://www.itl.nist.gov/div898/handbook/eda/section3/eda35f.htm
-    """
-
-    x_min = min(expected.keys())
-    x_max = max(expected.keys())
-
-    assert all(x_min <= x <= x_max for x in observed.keys())
-
-    n = sum(observed.values())
-
-    def term(x):
-        n_i = Decimal(observed[x]) / Decimal(n)
-        p_i = Decimal(expected[x])
-
-        return (n_i - p_i) ** 2 / p_i
-
-    return n * sum(map(term, expected.keys()))

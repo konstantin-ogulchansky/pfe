@@ -13,7 +13,8 @@ from pfe.misc.log.misc import itemize
 from pfe.misc.plot import Plot
 from pfe.misc.style import blue, underlined, bold
 from pfe.parse import parse, publications_in
-from pfe.tasks.hypothesis import degree_distribution, histogram
+from pfe.tasks.distributions import degree_distribution
+from pfe.tasks.hypothesis import histogram
 
 
 if __name__ == '__main__':

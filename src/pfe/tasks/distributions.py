@@ -3,6 +3,7 @@ A module for calculating statistics on collaboration networks.
 """
 
 from collections import Counter
+from decimal import Decimal
 from typing import Any, Iterable, Iterator, Tuple, Optional, Union
 
 import networkx as nx
@@ -13,7 +14,7 @@ class Distribution:
     """An empirical discrete probability distribution.
 
     Provides multiple convenient functions to analyse the distribution,
-    such as ``pdf``,
+    such as ``pdf``, ``cdf``, ``ccdf``, etc.
 
     :param p: either a sequence of observed values or a dictionary that maps
               an observed value to the number of times it was observed.
@@ -279,5 +280,36 @@ def communities_per_publication(graph: nx.Graph, publications: Any) -> Distribut
 
         distribution.setdefault(partition_size, 0)
         distribution[partition_size] += 1
+
+    return Distribution(distribution)
+
+
+def degree_distribution(graph: nx.Graph, weighted: bool = False) -> Distribution:
+    """Computes the degree distribution distribution.
+
+    :param graph: a `networkx.Graph`.
+    :param weighted: whether the degree distribution should be weighted.
+
+    :return: a dictionary representing the distribution,
+             where key is a degree and a value is the number
+             of times this degree is found in the graph.
+    """
+
+    distribution = {}
+
+    for node in graph.nodes:
+        if weighted:
+            degrees = graph.degree(weight='weight')
+            degree = degrees[node]
+
+            if isinstance(degree, Decimal):
+                degree = int(degree.quantize(Decimal('1')))
+            else:
+                degree = round(degree)
+        else:
+            degree = graph.degree[node]
+
+        distribution.setdefault(degree, 0)
+        distribution[degree] += 1
 
     return Distribution(distribution)

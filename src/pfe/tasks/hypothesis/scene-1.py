@@ -8,8 +8,7 @@ from pfe.misc.log import Log, Pretty, redirect_stderr_to, suppress_stderr
 from pfe.misc.plot import Plots, crosses, circles
 from pfe.misc.style import blue
 from pfe.parse import parse, publications_in
-from pfe.tasks.hypothesis import degree_distribution
-from pfe.tasks.distributions import Distribution
+from pfe.tasks.distributions import Distribution, degree_distribution
 
 
 weighted: bool = False
