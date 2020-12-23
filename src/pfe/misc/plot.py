@@ -7,7 +7,7 @@ from typing import Any, Iterable, Tuple, Optional, Union
 
 import matplotlib.pyplot as plt
 
-from pfe.tasks.statistics import Statistic
+from pfe.tasks.distributions import Distribution
 
 
 class Plot:
@@ -57,7 +57,7 @@ class Plot:
         """Returns the `y` axis."""
         return YAxis(self.ax)
 
-    def scatter(self, data: Union[dict[float, float], Statistic], **kwargs: Any):
+    def scatter(self, data: Union[dict[float, float], Distribution], **kwargs: Any):
         """Scatters points that are specified in `data`.
 
         :param data: a dictionary that maps `x` to `y`.
@@ -73,7 +73,7 @@ class Plot:
 
         self.ax.scatter(x, y, **kwargs)
 
-    def draw(self, data: Union[dict[float, float], Statistic], **kwargs: Any):
+    def draw(self, data: Union[dict[float, float], Distribution], **kwargs: Any):
         """Draws a line through (sorted) points that are specified in `data`.
 
         :param data: a dictionary that maps `x` to `y`.

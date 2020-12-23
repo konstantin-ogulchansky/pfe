@@ -7,12 +7,12 @@ from pfe.misc.log import Log, Pretty, redirect_stderr_to
 from pfe.misc.plot import Plot
 from pfe.misc.style import blue
 from pfe.parse import publications_in
-from pfe.tasks.statistics import publications_per_author
+from pfe.tasks.distributions import publications_per_author
 
 
 if __name__ == '__main__':
     log: Log = Pretty()
-    log.info('Starting...')
+    log.info('Starting.')
 
     redirect_stderr_to(log.warn)
 

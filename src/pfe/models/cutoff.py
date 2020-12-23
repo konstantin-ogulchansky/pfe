@@ -217,7 +217,7 @@ if __name__ == '__main__':
 
     with log.scope.info('Plotting the distribution.'), suppress_stderr():
         plot = Plot(title='Degree Distribution (cutoff)')
-        plot.scatter(distribution.normalized())
+        plot.scatter(distribution.pdf())
 
         plot.x.scale('log')
         plot.x.label('Degree $k$')
@@ -236,7 +236,7 @@ if __name__ == '__main__':
 
     with log.scope.info('Plotting the fit.'), suppress_stderr():
         plot = Plot(title='Fit (cutoff)')
-        plot.scatter(truncated.normalized())
+        plot.scatter(truncated.pdf())
 
         plot.x.scale('log')
         plot.x.label('Degree $k$')

@@ -9,7 +9,7 @@ from pfe.misc.plot import Plots, crosses, circles
 from pfe.misc.style import blue
 from pfe.parse import parse, publications_in
 from pfe.tasks.hypothesis import degree_distribution
-from pfe.tasks.statistics import Statistic
+from pfe.tasks.distributions import Distribution
 
 
 weighted: bool = False
@@ -19,12 +19,12 @@ tex: bool = True
 """Whether to use TeX in plots."""
 
 
-def plot_pdf(statistic: Statistic, fit: pl.Fit):
+def plot_pdf(statistic: Distribution, fit: pl.Fit):
     """Plots theoretical PDFs."""
 
     global tex, weighted
 
-    normalized = statistic.normalized()
+    normalized = statistic.pdf()
     truncated = statistic.truncate(fit.xmin, fit.xmax)
 
     plots = Plots(rows=2, cols=1, tex=tex)
@@ -63,7 +63,7 @@ def plot_pdf(statistic: Statistic, fit: pl.Fit):
 
     # The bottom subplot.
     bottom = plots[1, 0]
-    bottom.scatter(truncated.normalized())
+    bottom.scatter(truncated.pdf())
 
     bottom.x.label('Weighted ' * weighted + 'Degree $k$')
     bottom.x.scale('log')
@@ -83,7 +83,7 @@ def plot_pdf(statistic: Statistic, fit: pl.Fit):
     plots.save('COMP' + '-w' * weighted + '-pdf.eps')
 
 
-def plot_cdf(statistic: Statistic, fit: pl.Fit):
+def plot_cdf(statistic: Distribution, fit: pl.Fit):
     """Plots theoretical CDFs."""
 
     global tex, weighted
@@ -126,7 +126,7 @@ def plot_cdf(statistic: Statistic, fit: pl.Fit):
     bottom.legend(location='lower left')
 
     # Saving the plot.
-    plots.save('COMP' + '-w' * weighted + '-ccdf.eps')
+    plots.save('COMP' + '-w' * weighted + '-cdf.eps')
 
 
 if __name__ == '__main__':

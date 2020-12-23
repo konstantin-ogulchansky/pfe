@@ -7,7 +7,7 @@ from pfe.misc.log import Log, Pretty, redirect_stderr_to
 from pfe.misc.plot import Plot
 from pfe.misc.style import blue
 from pfe.parse import parse, publications_in
-from pfe.tasks.statistics import communities_per_publication
+from pfe.tasks.distributions import communities_per_publication
 
 
 if __name__ == '__main__':

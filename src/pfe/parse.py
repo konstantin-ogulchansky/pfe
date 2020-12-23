@@ -176,9 +176,7 @@ def parse(publications: Iterable[dict], self_loops: bool = True, to: Optional[nx
             graph.nodes[u]['publications'] += 1
 
         # Add edges.
-        n = len(authors)
-
-        for i in range(n):
+        for i in range(n := len(authors)):
             u = int(authors[i]['id'])
 
             if self_loops and not graph.has_edge(u, u):

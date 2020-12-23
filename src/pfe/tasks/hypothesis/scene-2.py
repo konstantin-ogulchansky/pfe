@@ -51,7 +51,7 @@ if __name__ == '__main__':
 
     with log.scope.info('Plotting PDF.'):
         plot = Plot(title='PDF')
-        plot.scatter(truncated.normalized())
+        plot.scatter(truncated.pdf())
         plot.scatter(pdf, color='red')
 
         fit.truncated_power_law.plot_pdf(ax=plot.ax)
@@ -67,7 +67,7 @@ if __name__ == '__main__':
         plot.show()
 
     with log.scope.info('Computing the χ² statistic.'):
-        n = truncated.total()
+        n = truncated.size()
 
         obs = {x: truncated[x] for x in sorted(truncated)}
         exp = {x: n * pdf[x]   for x in sorted(pdf)}

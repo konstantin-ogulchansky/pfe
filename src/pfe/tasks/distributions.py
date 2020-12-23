@@ -2,22 +2,33 @@
 A module for calculating statistics on collaboration networks.
 """
 
-from typing import Any, Iterable, Iterator, Tuple, Optional
+from collections import Counter
+from typing import Any, Iterable, Iterator, Tuple, Optional, Union
 
 import networkx as nx
 import community as cm
 
 
-class Statistic:
-    """A discrete statistic.
+class Distribution:
+    """An empirical discrete probability distribution.
 
-    :param p: a dictionary representing a discrete distribution.
+    Provides multiple convenient functions to analyse the distribution,
+    such as ``pdf``,
+
+    :param p: either a sequence of observed values or a dictionary that maps
+              an observed value to the number of times it was observed.
     """
 
     __slots__ = ('_p', )
 
-    def __init__(self, p: dict[int, int]):
-        self._p = p
+    def __init__(self, p: Union[Iterable[int], dict[int, int]]):
+        if isinstance(p, dict):
+            self._p = p
+        else:
+            self._p = Counter(p)
+
+        if not self._p:
+            raise ValueError('The provided distribution is empty.')
 
     def __iter__(self) -> Iterator[int]:
         """Returns an iterator over keys of the distribution."""
@@ -37,9 +48,9 @@ class Statistic:
 
     def items(self) -> Iterable[Tuple[int, int]]:
         """Returns values of the distribution."""
-        return self._p.items()
+        return self._p.items()  # NOQA.
 
-    def get(self, item: int, default: int) -> int:
+    def get(self, item: int, default: int = 0) -> int:
         """Returns either value by key or the default value."""
         return self._p.get(item, default)
 
@@ -47,27 +58,51 @@ class Statistic:
         """Removes a value by the specified key."""
         return self._p.pop(item)
 
-    def cdf(self, inclusive: bool = False) -> dict[int, float]:
-        """Computes the cumulative distribution function."""
+    def pdf(self) -> dict[int, float]:
+        """Returns the probability distribution function (PDF)."""
 
-        normalized = self.normalized()
+        size = self.size()
 
-        return {k: sum(normalized.get(l, 0) for l in range(k + 1 if inclusive else k))
-                for k in normalized.keys()}
+        return {k: n / size for k, n in self._p.items()}
 
-    def ccdf(self, inclusive: bool = True) -> dict[int, float]:
-        """Computes the complementary cumulative distribution function."""
+    def cdf(self) -> dict[int, float]:
+        """Computes the cumulative distribution function (CDF).
 
-        normalized = self.normalized()
-        maximum = max(normalized.keys())
+        CDF is defined as ``F(x) = P(X < x)``.
+        """
 
-        return {k: sum(normalized.get(l, 0) for l in range(k if inclusive else k + 1, maximum + 1))
-                for k in normalized.keys()}
+        pdf = self.pdf()
+
+        return {k: sum(pdf.get(l, 0) for l in range(k))
+                for k in pdf.keys()}
+
+    def ccdf(self) -> dict[int, float]:
+        """Computes the complementary cumulative distribution function (CCDF),
+        which is also known as the survival function.
+
+        CCDF is defined as ``F̄(x) = 1 - F(x) = P(X >= x)``, where ``F(x)`` is CDF.
+        """
+
+        pdf = self.pdf()
+        max = self.max()
+
+        return {k: sum(pdf.get(l, 0) for l in range(k, max + 1))
+                for k in pdf.keys()}
 
     def truncate(self,
                  min: Optional[float] = None,
-                 max: Optional[float] = None) -> 'Statistic':
-        """Truncates the statistic."""
+                 max: Optional[float] = None) -> 'Distribution':
+        """Returns a new distribution with observed values
+        within the interval ``[min, max]``.
+
+        If some element (``min`` or ``max``) is not specified, then
+        the interval is unbounded from the corresponding side.
+
+        :param min: the minimum element of the interval (optional).
+        :param max: the maximum element of the interval (optional).
+
+        :return: a new instance of truncated ``Distribution``.
+        """
 
         def truncate(x: dict[int, Any]) -> dict[int, Any]:
             if min is None and max is None:
@@ -82,45 +117,38 @@ class Statistic:
 
             return {x: y for x, y in x.items() if in_range(x)}
 
-        return Statistic(truncate(self._p))
+        return Distribution(truncate(self._p))
+
+    def size(self) -> int:
+        """Returns the total number of the observed values."""
+        return sum(self._p.values())
+
+    def min(self) -> int:
+        """Returns the minimum observed value."""
+        return min(self._p.keys())
+
+    def max(self) -> int:
+        """Returns the maximum observed value."""
+        return max(self._p.keys())
+
+    def mean(self) -> float:
+        """Returns the mean of the distribution."""
+        return sum(k * n for k, n in self._p.items()) / self.size()
 
     def as_sequence(self) -> Iterable[int]:
-        """Returns the distribution values as a sequence."""
+        """Returns the observed values of the distribution as a sequence."""
 
         for k, n in self._p.items():
             while (n := n - 1) >= 0:
                 yield k
 
     def as_list(self) -> list[int]:
-        """Returns the distribution values as a list."""
+        """Returns the observed values of the distribution as a list."""
         return list(self.as_sequence())
 
     def as_dict(self) -> dict[int, int]:
-        """Returns the distribution values as a dictionary."""
+        """Returns the observed values of the distribution as a dict."""
         return dict(self._p)
-
-    def normalized(self) -> dict[int, float]:
-        """Returns a normalized distribution."""
-
-        total = self.total()
-
-        return {k: n / total for k, n in self._p.items()}
-
-    def total(self) -> int:
-        """Returns the total number of observations."""
-        return sum(self._p.values())
-
-    def min(self) -> int:
-        """Returns the minimum `x`."""
-        return min(self._p.keys())
-
-    def max(self) -> int:
-        """Returns the maximum `x`."""
-        return max(self._p.keys())
-
-    def mean(self) -> float:
-        """Returns the mean value."""
-        return sum(k * n for k, n in self._p.items()) / self.total()
 
 
 def number_of_authors(publications: list[dict]) -> int:
@@ -176,12 +204,12 @@ def number_of_collaborations(graph: nx.Graph, weighted: bool = False) -> int:
                    if u != v)
 
 
-def publications_per_author(publications: list[dict]) -> Statistic:
+def publications_per_author(publications: list[dict]) -> Distribution:
     """Computes the distribution of publications per author.
 
     :param publications: a list of publications (in a raw format).
 
-    :returns: a dictionary representing the distribution.
+    :return: the computed ``Distribution``.
     """
 
     authors = {}
@@ -199,15 +227,15 @@ def publications_per_author(publications: list[dict]) -> Statistic:
         distribution.setdefault(publications, 0)
         distribution[publications] += 1
 
-    return Statistic(distribution)
+    return Distribution(distribution)
 
 
-def authors_per_publication(publications: list[dict]) -> Statistic:
-    """Computes the distribution of authors per publication.
+def authors_per_publication(publications: list[dict]) -> Distribution:
+    """Computes the distribution of the number of authors per publication.
 
-    :param publications: a list of publications (in a raw format).
+    :param publications: a list of publications.
 
-    :returns: a dictionary representing the distribution.
+    :return: the computed ``Distribution``.
     """
 
     distribution = {}
@@ -218,63 +246,34 @@ def authors_per_publication(publications: list[dict]) -> Statistic:
         distribution.setdefault(number, 0)
         distribution[number] += 1
 
-    return Statistic(distribution)
+    return Distribution(distribution)
 
 
-def communities_per_publication(graph: nx.Graph, publications: Any) -> Statistic:
+def communities_per_publication(graph: nx.Graph, publications: Any) -> Distribution:
     """Computes the distributions of the number of communities per publication.
 
-    TODO.
+    The function uses the Louvain method [1] to detect communities in the graph.
 
-    :param graph: ...
-    :param publications: ...
+    .. [1] Vincent D. Blondel, Jean-Loup Guillaume, Renaud Lambiotte, and Etienne Lefebvre.
+           "Fast unfolding of communities in large networks",
+           Journal  of  Statistical  Mechanics:  Theory  and  Experiment, October 2008.
+           https://doi.org/10.1088/1742-5468/2008/10/P10008.
 
-    :returns: ...
+    :param graph: the collaboration graph.
+    :param publications: the list of publications that
+                         the graph was constructed from.
+
+    :return: the computed ``Distribution``.
     """
 
     communities = cm.best_partition(graph)
     distribution = {}
 
     for publication in publications:
-        try:
-            partition = {communities[int(x['id'])] for x in publication['authors']}
-            partition_size = len(partition)
+        partition = {communities[int(x['id'])] for x in publication['authors']}
+        partition_size = len(partition)
 
-            distribution.setdefault(partition_size, 0)
-            distribution[partition_size] += 1
-        except KeyError:
-            pass
+        distribution.setdefault(partition_size, 0)
+        distribution[partition_size] += 1
 
-    return Statistic(distribution)
-
-
-def partition_of_authors(graph: nx.Graph, publications: Any, partition_size: int):
-    """..."""
-
-    def louvain(_):
-        raise NotImplementedError
-
-    communities = louvain(graph)
-    proportions = []
-
-    for publication in publications:
-        partition = {}
-
-        for author in publication.authors:
-            community = next(x for x in communities if author.id in x)
-
-            partition.setdefault(community.id, [])
-            partition[community.id].append(author.id)
-
-        if len(partition) != partition_size:
-            continue
-
-        # Append the proportion of authors from each community:
-        # for authors in each community, yield the number of those authors
-        # divided by the total number of authors of the publication.
-        proportions.append(tuple(sorted(
-            len(x) / len(publication.authors)
-            for x in partition.values()
-        )))
-
-    return proportions
+    return Distribution(distribution)

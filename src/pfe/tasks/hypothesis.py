@@ -25,11 +25,11 @@ from typing import Iterable, Sequence
 import networkx as nx
 
 from pfe.misc.log.misc import percents
-from pfe.tasks.statistics import Statistic
+from pfe.tasks.distributions import Distribution
 from pfe.misc.log import Log, Nothing
 
 
-def degree_distribution(graph: nx.Graph, weighted: bool = False) -> Statistic:
+def degree_distribution(graph: nx.Graph, weighted: bool = False) -> Distribution:
     """Computes the degree distribution distribution.
 
     :param graph: a `networkx.Graph`.
@@ -57,7 +57,7 @@ def degree_distribution(graph: nx.Graph, weighted: bool = False) -> Statistic:
         distribution.setdefault(degree, 0)
         distribution[degree] += 1
 
-    return Statistic(distribution)
+    return Distribution(distribution)
 
 
 def sample(pdf: dict[int, float],

@@ -9,7 +9,7 @@ from pfe.misc.log import Log, Pretty, redirect_stderr_to
 from pfe.misc.plot import Plot
 from pfe.misc.style import blue
 from pfe.parse import publications_in
-from pfe.tasks.statistics import authors_per_publication
+from pfe.tasks.distributions import authors_per_publication
 
 
 if __name__ == '__main__':
@@ -46,7 +46,7 @@ if __name__ == '__main__':
 
     with log.scope.info('Plotting the distribution.'):
         plot = Plot(tex=True)
-        plot.scatter(distribution.truncate(fit.xmin, fit.xmax).normalized())
+        plot.scatter(distribution.truncate(fit.xmin, fit.xmax).pdf())
 
         plot.x.label('Number of Authors')
         plot.x.scale('log')

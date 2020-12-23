@@ -8,7 +8,7 @@ Compute different metrics, such as
 from pfe.misc.log import Log, Pretty
 from pfe.misc.style import blue
 from pfe.parse import parse, publications_in
-from pfe.tasks.statistics import number_of_authors, number_of_publications, number_of_collaborations
+from pfe.tasks.distributions import number_of_authors, number_of_publications, number_of_collaborations
 
 
 if __name__ == '__main__':
