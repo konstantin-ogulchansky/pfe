@@ -1,5 +1,5 @@
 """
-...
+Testing whether a power-law distribution is a plausible fit to the data.
 """
 
 import json
@@ -11,8 +11,9 @@ import powerlaw as pl
 
 from pfe.misc.log import Pretty, suppress_stderr
 from pfe.misc.log.misc import percents
+from pfe.misc.style import blue
 from pfe.parse import parse, publications_in
-from pfe.tasks.hypothesis import sample
+from pfe.tasks.hypothesis import sample, p_value
 from pfe.tasks.distributions import Distribution, degree_distribution
 
 
@@ -53,13 +54,16 @@ if __name__ == '__main__':
         e = 1e-8
 
         x = list(range(int(x_min), int(x_max) + d + 1))
-        y = fit.truncated_power_law.pdf(x)
+        y = fit.power_law.pdf(x)
 
         pdf = dict(zip(x, y))
 
         assert abs(1 - sum(pdf.values())) < e, \
             f'Must be closer to 1 than {sum(pdf.values())}.'
 
+        # TODO:
+        #   We need to implement another method to draw samples
+        #   (refer to Clauset et al., 2009: generating synthetic data sets).
         for i in range(1, samples + 1):
             sampled = sample(pdf, size=graph.number_of_nodes())
             sampled = Distribution(sampled)
@@ -68,3 +72,8 @@ if __name__ == '__main__':
                 json.dump(sampled.as_dict(), file)
 
             log.info(f'Sampled {i:>5}. [{percents(i, samples)}]')
+
+    with log.scope.info(f'Testing the plausibility of a power law.'):
+        p = p_value(fit.power_law, samples_from(Path('samples')))
+
+        log.info(f'Estimated p-value: {blue | p}')
