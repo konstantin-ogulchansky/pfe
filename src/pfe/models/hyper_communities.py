@@ -1,20 +1,20 @@
 """
-A model that generates hypergraphs.
+A model that generates hypergraphs with communities.
 """
 
-from collections import Counter
 from dataclasses import dataclass, asdict, field
 from itertools import product
 from typing import Callable, Union
 
 import numpy as np
+import powerlaw as pl
 
 from pfe.misc.errors import ಠ_ಠ
 from pfe.misc.log import Pretty, Log, Nothing, suppress_stderr
 from pfe.misc.log.misc import percents
 from pfe.misc.plot import Plot
 from pfe.misc.style import magenta, blue
-from pfe.tasks.statistics import Statistic
+from pfe.tasks.distributions import Distribution
 
 
 @dataclass
@@ -286,11 +286,9 @@ if __name__ == '__main__':
                  f'{blue | graph.number_of_edges()} edges.')
 
     with log.scope.info('Computing the degree distribution.'), suppress_stderr():
-        distribution = Statistic(Counter(graph.d))
+        distribution = Distribution(graph.d)
 
-        import powerlaw as pl
-
-        fit = pl.Fit(list(distribution.sequence()), discrete=True)
+        fit = pl.Fit(distribution.as_list(), discrete=True)
 
         truncated = distribution.truncate(fit.xmin, fit.xmax)
 
@@ -327,7 +325,7 @@ if __name__ == '__main__':
 
     with log.scope.info('Plotting the fit.'), suppress_stderr():
         plot = Plot(title='Fit (hyper)')
-        plot.scatter(truncated.normalized())
+        plot.scatter(truncated.pdf())
 
         plot.x.label('Degree $k$')
         plot.x.scale('log')

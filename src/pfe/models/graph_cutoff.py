@@ -1,5 +1,5 @@
 """
-A model that generates graph following
+A model that generates graphs following
 a power-law distribution with an exponential cutoff.
 """
 
@@ -181,7 +181,7 @@ if __name__ == '__main__':
     log = Pretty()
     log.info('Starting.')
 
-    read = 'graph-k-345673.txt'
+    read = ''
 
     if read:
         with log.scope.info(f'Reading a graph from "{magenta | read}".'):
