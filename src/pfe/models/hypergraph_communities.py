@@ -9,6 +9,7 @@ from typing import Callable, Union
 import numpy as np
 import powerlaw as pl
 
+from pfe.misc import distributions
 from pfe.misc.errors import ಠ_ಠ
 from pfe.misc.log import Pretty, Log, Nothing, suppress_stderr
 from pfe.misc.log.misc import percents
@@ -242,21 +243,9 @@ class Hypergraph:
             self.e[q2].append(u)
 
 
-def normal(loc: float, scale: float) -> Callable[[], int]:
-    """Returns a function that generates integer random values according to
-    the normal (Gaussian) distribution with parameters `loc` and `scale`."""
-
-    def next() -> int:
-        return round(np.random.normal(loc=loc, scale=scale))
-
-    return next
-
-
 if __name__ == '__main__':
     log = Pretty()
     log.info('Starting.')
-
-    np.set_printoptions(linewidth=np.inf, suppress=True)
 
     with log.scope.info('Generating a graph.'):
         parameters = Parameters(
@@ -269,7 +258,7 @@ if __name__ == '__main__':
                [0.25, 0.25]],
             m=[0.5, 0.5],
             gamma=20,
-            distribution=lambda: 1,
+            distribution=distributions.constant(1)
         )
 
         with log.scope.info('Parameters.'):
