@@ -25,7 +25,7 @@ class Parameters:
     :param n0: the initial number of nodes.
     :param n: the final number of nodes.
     :param p: the probability to add a node.
-    :parma q: the probability to add an edge.
+    :param q: the probability to add an edge.
     :param d: the distribution of the cardinalities of hyperedges.
     """
 
@@ -46,6 +46,11 @@ class Parameters:
         if not 0 <= self.q <= 1:
             raise ValueError('`q` must be in the range [0, 1].')
 
+        # Cite: Fenner et al., 2005.
+        # > It is necessary that, on average, more balls
+        # > are added to the system than become inactive.
+        if not (self.p > (1 - self.p) * (1 - self.q)):
+            raise ValueError('`p > (1 - p) * (1 - q)` must hold.')
 
 class Hypergraph:
     """A hypergraph generated according to the model.
@@ -169,7 +174,7 @@ if __name__ == '__main__':
             n0=10,
             n=10**5,
             p=0.3,
-            q=0.9,
+            q=0.7,
             d=distributions.uniform(3, 4, 5)
         )
 
