@@ -6,6 +6,7 @@ and provides a slightly better API for plotting.
 from typing import Any, Iterable, Tuple, Optional, Union
 
 import matplotlib.pyplot as plt
+import powerlaw as pl
 
 from pfe.tasks.distributions import Distribution
 
@@ -89,6 +90,10 @@ class Plot:
 
         self.ax.plot(x, y, **kwargs)
 
+    def title(self, text: str):
+        """An alias for `set_title`."""
+        self.ax.set_title(text)
+
     def text(self, x: float, y: float, label: str, **kwargs: Any):
         """An alias for `text`."""
         self.ax.text(x, y, label, **kwargs)
@@ -161,6 +166,104 @@ class Plot:
 
         if and_show:
             self.show(tight=False)
+
+    @classmethod
+    def distribution(cls, distribution: Distribution, fit: Optional[pl.Fit] = None, **kwargs: Any) -> 'Plot':
+        """Constructs a ``Plot`` depicting the provided ``distribution``."""
+
+        plot = cls(**kwargs)
+
+        plot.x.label('Degree $k$')
+        plot.x.scale('log')
+
+        plot.y.label(('Number' if fit is None else 'Fraction') +
+                     ' of Nodes with Degree $k$')
+        plot.y.scale('log')
+
+        if fit is None:
+            plot.scatter(distribution)
+        else:
+            plot.scatter(distribution.pdf())
+
+            fit.plot_pdf(ax=plot.ax, original_data=True, label='Empirical PDF')
+
+            if fit.xmin is not None:
+                plot.x.line(x=fit.xmin)
+            if fit.xmax is not None:
+                plot.x.line(x=fit.xmax)
+
+            plot.legend()
+
+        return plot
+
+    @classmethod
+    def pdfs(cls, distribution: Distribution, fit: pl.Fit, **kwargs: Any) -> 'Plot':
+        """Constructs a ``Plot`` depicting PDF of the provided ``distribution``
+        and the fitted theoretical distributions."""
+
+        plot = Plot(**kwargs)
+
+        plot.x.label('Degree $k$')
+        plot.x.scale('log')
+
+        plot.y.label('Fraction of Nodes with Degree $k$')
+        plot.y.scale('log')
+
+        plot.scatter(distribution.truncate(fit.xmin, fit.xmax).pdf())
+
+        fit.plot_pdf(ax=plot.ax, label='Empirical')
+        fit.power_law.plot_pdf(ax=plot.ax, label='Power-Law')
+        fit.truncated_power_law.plot_pdf(ax=plot.ax, label='Power-Law with Cut-Off')
+
+        plot.legend()
+
+        return plot
+
+    @classmethod
+    def cdfs(cls, distribution: Distribution, fit: pl.Fit, **kwargs: Any) -> 'Plot':
+        """Constructs a ``Plot`` depicting CDF of the provided ``distribution``
+        and the fitted theoretical distributions."""
+
+        plot = cls(**kwargs)
+
+        plot.x.label('Degree $k$')
+        plot.x.scale('log')
+
+        plot.y.label('$F(k)$')
+        plot.y.scale('log')
+
+        plot.scatter(distribution.truncate(fit.xmin, fit.xmax).cdf())
+
+        fit.plot_cdf(ax=plot.ax, label='Empirical')
+        fit.power_law.plot_cdf(ax=plot.ax, label='Power-Law')
+        fit.truncated_power_law.plot_cdf(ax=plot.ax, label='Power-Law with Cut-Off')
+
+        plot.legend()
+
+        return plot
+
+    @classmethod
+    def ccdfs(cls, distribution: Distribution, fit: pl.Fit, **kwargs: Any) -> 'Plot':
+        """Constructs a ``Plot`` depicting CCDF of the provided ``distribution``
+        and the fitted theoretical distributions."""
+
+        plot = cls(**kwargs)
+
+        plot.x.label('Degree $k$')
+        plot.x.scale('log')
+
+        plot.y.label('$\\overline{F}(k)$')
+        plot.y.scale('log')
+
+        plot.scatter(distribution.truncate(fit.xmin, fit.xmax).ccdf())
+
+        fit.plot_ccdf(ax=plot.ax, label='Empirical')
+        fit.power_law.plot_ccdf(ax=plot.ax, label='Power-Law')
+        fit.truncated_power_law.plot_ccdf(ax=plot.ax, label='Power-Law with Cut-Off')
+
+        plot.legend()
+
+        return plot
 
 
 class Plots:

@@ -64,8 +64,8 @@ class Parameters:
 
         if self.n0 < self.c:
             raise ValueError('`n0` must be greater or equal to `c`.')
-        if self.n0 > self.n:
-            raise ValueError('`n0` must be less or equal to `n`.')
+        if not 0 < self.n0 <= self.n:
+            raise ValueError('`n0` and `n` must be positive and `n0 <= n`.')
 
         if not 0 <= self.pv <= 1:
             raise ValueError('`pv` must be in the range [0, 1].')
@@ -276,56 +276,13 @@ if __name__ == '__main__':
 
     with log.scope.info('Computing the degree distribution.'), suppress_stderr():
         distribution = Distribution(graph.d)
-
         fit = pl.Fit(distribution.as_list(), discrete=True)
 
-        truncated = distribution.truncate(fit.xmin, fit.xmax)
-
     with log.scope.info('Plotting the distribution.'):
-        plot = Plot(title='Degree Distribution (hyper)')
-        plot.scatter(distribution)
-
-        plot.x.label('Degree $k$')
-        plot.x.scale('log')
-        plot.x.limit(10**-1, 10**3)
-
-        plot.y.label('Number of Nodes with Degree $k$')
-        plot.y.scale('log')
-
-        plot.show()
-
+        Plot.distribution(distribution, fit).show()
+    with log.scope.info('Plotting PDFs.'):
+        Plot.pdfs(distribution, fit).show()
+    with log.scope.info('Plotting CDFs.'):
+        Plot.cdfs(distribution, fit).show()
     with log.scope.info('Plotting CCDFs.'):
-        plot = Plot(title='CCDF (hyper)')
-        plot.scatter(truncated.ccdf())
-
-        plot.x.label('Degree $k$')
-        plot.x.scale('log')
-        plot.x.limit(10**-1, 10**3)
-
-        plot.y.label('$1 - F(k)$')
-        plot.y.scale('log')
-
-        fit.plot_ccdf(ax=plot.ax, label='Empirical')
-        fit.power_law.plot_ccdf(ax=plot.ax, label='Power-Law')
-        fit.truncated_power_law.plot_ccdf(ax=plot.ax, label='Power-Law with Cut-Off')
-
-        plot.legend()
-        plot.show()
-
-    with log.scope.info('Plotting the fit.'), suppress_stderr():
-        plot = Plot(title='Fit (hyper)')
-        plot.scatter(truncated.pdf())
-
-        plot.x.label('Degree $k$')
-        plot.x.scale('log')
-        plot.x.limit(10**-1, 10**3)
-
-        plot.y.label('Fraction of Nodes with Degree $k$')
-        plot.y.scale('log')
-
-        fit.plot_pdf(ax=plot.ax, label='Empirical')
-        fit.power_law.plot_pdf(ax=plot.ax, label='Power-Law')
-        fit.truncated_power_law.plot_pdf(ax=plot.ax, label='Power-Law with Cut-Off')
-
-        plot.legend()
-        plot.show()
+        Plot.ccdfs(distribution, fit).show()

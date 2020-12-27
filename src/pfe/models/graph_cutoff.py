@@ -215,57 +215,11 @@ if __name__ == '__main__':
 
         log.info(f'Log-likelihood (PL, PL w/ C): {blue | comparison}.')
 
-    with log.scope.info('Plotting the distribution.'), suppress_stderr():
-        plot = Plot(title='Degree Distribution (cutoff)')
-        plot.scatter(distribution.pdf())
-
-        plot.x.scale('log')
-        plot.x.label('Degree $k$')
-        plot.x.limit(10**-1, 10**3)
-
-        if fit.xmin is not None:
-            plot.x.line(fit.xmin)
-
-        plot.y.scale('log')
-        plot.y.label('Number of Nodes with Degree $k$')
-
-        fit.plot_pdf(ax=plot.ax, original_data=True, label='Empirical PDF')
-
-        plot.legend()
-        plot.show()
-
-    with log.scope.info('Plotting the fit.'), suppress_stderr():
-        plot = Plot(title='Fit (cutoff)')
-        plot.scatter(truncated.pdf())
-
-        plot.x.scale('log')
-        plot.x.label('Degree $k$')
-        plot.x.limit(10**-1, 10**3)
-
-        plot.y.scale('log')
-        plot.y.label('Fraction of Nodes with Degree $k$')
-
-        fit.plot_pdf(ax=plot.ax, label='Empirical')
-        fit.power_law.plot_pdf(ax=plot.ax, label='Power Law')
-        fit.truncated_power_law.plot_pdf(ax=plot.ax, label='Power Law with Cutoff')
-
-        plot.legend()
-        plot.show()
-
+    with log.scope.info('Plotting the distribution.'):
+        Plot.distribution(distribution, fit).show()
+    with log.scope.info('Plotting PDFs.'):
+        Plot.pdfs(distribution, fit).show()
+    with log.scope.info('Plotting CDFs.'):
+        Plot.cdfs(distribution, fit).show()
     with log.scope.info('Plotting CCDFs.'):
-        plot = Plot(title='CCDF (cutoff)')
-        plot.scatter(truncated.ccdf())
-
-        plot.x.label('Degree $k$')
-        plot.x.scale('log')
-        plot.x.limit(10**-1, 10**3)
-
-        plot.y.label('$1 - F(k)$')
-        plot.y.scale('log')
-
-        fit.plot_ccdf(ax=plot.ax, label='Empirical')
-        fit.power_law.plot_ccdf(ax=plot.ax, label='Power-Law')
-        fit.truncated_power_law.plot_ccdf(ax=plot.ax, label='Power-Law with Cut-Off')
-
-        plot.legend()
-        plot.show()
+        Plot.ccdfs(distribution, fit).show()

@@ -2,7 +2,6 @@
 A model that generates hypergraphs.
 """
 
-from collections import Counter
 from dataclasses import dataclass, asdict
 from typing import Callable
 
@@ -25,13 +24,13 @@ class Parameters:
     :param n0: the initial number of nodes.
     :param n: the final number of nodes.
     :param p: the probability to add a node.
-    :param distribution: the distribution of the cardinalities of hyperedges.
+    :param d: the distribution of the cardinalities of hyperedges.
     """
 
     n0: int
     n: int
     p: float
-    distribution: Callable[[], int]
+    d: Callable[[], int]
 
     def __post_init__(self):
         """Validates parameters of the model."""
@@ -108,7 +107,7 @@ class Hypergraph:
 
         self.nodes.append(node := self.number_of_nodes())
 
-        if len(self.nodes) >= (size := parameters.distribution()):
+        if len(self.nodes) >= (size := parameters.d()):
             edge = np.random.choice(self.nodes, size=size - 1)
             edge = np.append(edge, node)
             edge = list(edge)
@@ -125,7 +124,7 @@ class Hypergraph:
         p = np.asarray(p, dtype=np.float64)
         p = p / p.sum()
 
-        size = parameters.distribution()
+        size = parameters.d()
         edge = np.random.choice(self.nodes, p=p, size=size)  # Should `replace=False` be set?
 
         self.edges.append(edge)
@@ -143,7 +142,7 @@ if __name__ == '__main__':
             n0=10,
             n=10**4,
             p=0.3,
-            distribution=distributions.uniform(3, 4, 5)
+            d=distributions.uniform(3, 4, 5)
         )
 
         with log.scope.info('Parameters.'):
@@ -160,57 +159,14 @@ if __name__ == '__main__':
                  f'{blue | graph.number_of_edges()} edges.')
 
     with log.scope.info('Computing the degree distribution.'), suppress_stderr():
-        distribution = Distribution(Counter(graph.degree))
-
+        distribution = Distribution(graph.degree)
         fit = pl.Fit(distribution.as_list(), discrete=True)
 
-        truncated = distribution.truncate(fit.xmin, fit.xmax)
-
     with log.scope.info('Plotting the distribution.'):
-        plot = Plot(title='Degree Distribution (hyper)')
-        plot.scatter(distribution)
-
-        plot.x.label('Degree $k$')
-        plot.x.scale('log')
-        plot.x.limit(10**-1, 10**3)
-
-        plot.y.label('Number of Nodes with Degree $k$')
-        plot.y.scale('log')
-
-        plot.show()
-
+        Plot.distribution(distribution, fit).show()
+    with log.scope.info('Plotting PDFs.'):
+        Plot.pdfs(distribution, fit).show()
+    with log.scope.info('Plotting CDFs.'):
+        Plot.cdfs(distribution, fit).show()
     with log.scope.info('Plotting CCDFs.'):
-        plot = Plot(title='CCDF (hyper)')
-        plot.scatter(truncated.ccdf())
-
-        plot.x.label('Degree $k$')
-        plot.x.scale('log')
-        plot.x.limit(10**-1, 10**3)
-
-        plot.y.label('$1 - F(k)$')
-        plot.y.scale('log')
-
-        fit.plot_ccdf(ax=plot.ax, label='Empirical')
-        fit.power_law.plot_ccdf(ax=plot.ax, label='Power-Law')
-        fit.truncated_power_law.plot_ccdf(ax=plot.ax, label='Power-Law with Cut-Off')
-
-        plot.legend()
-        plot.show()
-
-    with log.scope.info('Plotting the fit.'), suppress_stderr():
-        plot = Plot(title='Fit (hyper)')
-        plot.scatter(truncated.pdf())
-
-        plot.x.label('Degree $k$')
-        plot.x.scale('log')
-        plot.x.limit(10**-1, 10**3)
-
-        plot.y.label('Fraction of Nodes with Degree $k$')
-        plot.y.scale('log')
-
-        fit.plot_pdf(ax=plot.ax, label='Empirical')
-        fit.power_law.plot_pdf(ax=plot.ax, label='Power-Law')
-        fit.truncated_power_law.plot_pdf(ax=plot.ax, label='Power-Law with Cut-Off')
-
-        plot.legend()
-        plot.show()
+        Plot.ccdfs(distribution, fit).show()
