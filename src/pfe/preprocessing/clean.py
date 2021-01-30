@@ -94,11 +94,12 @@ if __name__ == '__main__':
     # with the following structure.
     #
     #     data/
-    #     |- comp/
-    #        |- 2019.json
-    #        |- 2020.json
-    #     |- math/
-    #        |- 2020.json
+    #     |- raw/
+    #        |- COMP/
+    #        |  |- 2019.json
+    #        |  |- 2020.json
+    #        |- MATH/
+    #           |- 2020.json
     #        ...
     #
     # Names of directories and files may differ.

@@ -42,12 +42,6 @@ class Plot:
             self.ax.set_axisbelow(True)
             self.ax.grid(linestyle='--')
 
-        # self.ax.set_color_cycle([
-        #     '#ff3f3f',  # Red.
-        #     '#3f3fff',  # Blue.
-        #     '#3fff3f',  # Green.
-        # ])
-
     @property
     def x(self) -> 'XAxis':
         """Returns the `x` axis."""
