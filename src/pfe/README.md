@@ -4,7 +4,7 @@ This directory contains scripts for processing collaboration graphs.
 
 ### Parsing
 
-`parse.py` defines methods to parse data on (clean) publications and construct 
+`parse.py` defines methods that parse data on (clean) publications and construct 
 a collaboration graph, based on the parsed data.
 We use the `networkx` package to represent graphs.
 
