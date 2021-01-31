@@ -36,7 +36,7 @@ Each node in the produced graph has the following attributes:
   author collaborated on.
 
 Each edge in the produced graph has the following attributes:
-* `publications`, which represents the total number of publications that the corresponding
+* `collaborations`, which represents the total number of publications that the corresponding
   authors collaborated on;
 * `weight`, which represents the "closeness" of the collaboration of two authors.
 
