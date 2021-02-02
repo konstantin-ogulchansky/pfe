@@ -179,8 +179,9 @@ def parse(publications: Iterable[dict], self_loops: bool = True, to: Optional[nx
         for i in range(n := len(authors)):
             u = int(authors[i]['id'])
 
-            if self_loops and not graph.has_edge(u, u):
-                graph.add_edge(u, u, weight=0, collaborations=0)
+            if self_loops:
+                if not graph.has_edge(u, u):
+                    graph.add_edge(u, u, weight=0, collaborations=0)
 
                 # We need to add `1 / (n * 2)` because self-loops are
                 # counted twice in a degree.

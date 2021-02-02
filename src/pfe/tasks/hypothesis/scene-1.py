@@ -48,13 +48,7 @@ def plot_pdf(statistic: Distribution, fit: pl.Fit):
         dx = 0.75 if weighted else 2.25
 
         top.x.line(fit.xmin)
-        top.text(fit.xmin - dx, 1.25 * 10**-4, f'$x_{{min}} = {fit.xmin:g}$', rotation=90)
-
-    if fit.xmax is not None:
-        dx = 0.75 if weighted else 2.25
-
-        top.x.line(fit.xmax)
-        top.text(fit.xmax - dx, 1.25 * 10**-4, f'$x_{{max}} = {fit.xmax:g}$', rotation=90)
+        top.text(fit.xmin - dx, 1.5 * 10**-4, f'$k_{{\\mathrm{{min}}}} = {fit.xmin:g}$', rotation=90)
 
     fit.plot_pdf(ax=top.ax, original_data=True, label='Empirical PDF')
 
@@ -74,7 +68,7 @@ def plot_pdf(statistic: Distribution, fit: pl.Fit):
 
     fit.plot_pdf(ax=bottom.ax, label='Empirical')
     fit.power_law.plot_pdf(ax=bottom.ax, label='Power-Law')
-    fit.truncated_power_law.plot_pdf(ax=bottom.ax, label='Power-Law with Cut-Off')
+    fit.truncated_power_law.plot_pdf(ax=bottom.ax, label='Power-Law with Cutoff')
 
     bottom.legend(location='lower left')
 
@@ -103,7 +97,7 @@ def plot_cdf(statistic: Distribution, fit: pl.Fit):
 
     fit.plot_cdf(ax=top.ax, label='Empirical')
     fit.power_law.plot_cdf(ax=top.ax, label='Power-Law')
-    fit.truncated_power_law.plot_cdf(ax=top.ax, label='Power-Law with Cut-Off')
+    fit.truncated_power_law.plot_cdf(ax=top.ax, label='Power-Law with Cutoff')
 
     top.legend(location='lower right')
 
@@ -115,12 +109,12 @@ def plot_cdf(statistic: Distribution, fit: pl.Fit):
     bottom.x.scale('log')
     bottom.x.limit(10 ** 0, 10 ** 4)
 
-    bottom.y.label('$\\overline{F}' + '_w' * weighted + '(k)$')
+    bottom.y.label('$\\bar{F}' + '_w' * weighted + '(k)$')
     bottom.y.scale('log')
 
     fit.plot_ccdf(ax=bottom.ax, label='Empirical')
     fit.power_law.plot_ccdf(ax=bottom.ax, label='Power-Law')
-    fit.truncated_power_law.plot_ccdf(ax=bottom.ax, label='Power-Law with Cut-Off')
+    fit.truncated_power_law.plot_ccdf(ax=bottom.ax, label='Power-Law with Cutoff')
 
     bottom.legend(location='lower left')
 
