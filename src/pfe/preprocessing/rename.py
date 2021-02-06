@@ -32,15 +32,26 @@ if __name__ == '__main__':
     # Rename nodes and save the graph to a file
     # to be able to read `igraph` faster.
     with log.scope.info('Renaming nodes.'):
-        mapping = zip(graph.nodes, range(len(graph.nodes)))
+        mapping = zip(graph.nodes, range(1, len(graph.nodes)+1))
         mapping = dict(mapping)
 
         graph = nx.relabel_nodes(graph, mapping, copy=False)
 
-    # Save the renamed graph to a file.
-    with log.scope.info('Saving the graph to a file.'):
+    with log.scope.info('Saving the mapping to a file.'):
         with open(data / 'nx_node_mapping.csv', 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerows(mapping.items())
 
-        nx.write_weighted_edgelist(graph, data / 'nx_full_graph_relabeled_nodes.txt')
+    # Save the renamed graph to a file.
+    with log.scope.info('Saving the nx graph to a file.'):
+        nx.write_weighted_edgelist(graph, data / 'nx_graph_relabeled_nodes.txt')
+
+    with log.scope.info('Saving the ig graph to a file.'):
+        encoding = 'utf-8'
+        with open(data / 'ig_graph_relabeled_nodes.net', 'wb') as f:
+            f.write(f'*Vertices {len(graph.nodes())}\n'.encode(encoding))
+            f.write('*Edges\n'.encode(encoding))
+            nx.write_weighted_edgelist(graph, f, encoding=encoding)
+
+
+
