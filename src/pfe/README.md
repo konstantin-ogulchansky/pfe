@@ -55,22 +55,20 @@ For the last option, run `rename.py` from `preprocessing`. The graph can be crea
 
 Three files will be created:
 
-1. `nx_node_mapping.csv` – contains pairs (author-id, i), i from [1..n];
+1. `nx_node_mapping.csv` – contains pairs `(author-id, i)`, `i` from `[1..n]`;
 2. `nx_graph_relabeled_nodes.txt` – file containing the list of weighted edges for `networkx`;
 3. `ig_graph_relabeled_nodes.net` – file containing the list of weighted edges for `igraph`.
 
 To create graph of `igraph` instance from file we used `igraph.Graph.Read_Pajek(file)`. 
 
-> iGraph nodes have ids from `1` to `n`, while `networks` can use author ids as node ids. Thus, author-ids need to be mapped into `[1..n]`.
-
-
+> `igraph` nodes have ids from `1` to `n`, while `networks` can use author ids as node ids. 
+> Thus, author-ids need to be mapped into `[1..n]`.
 
 ## Tasks
 
 The `tasks` directory contains scripts related to the tasks that had to be completed,
 such as computing and fitting distributions (of the number of authors per publication, 
 of the number of publications per author, etc.), clustering and others.
-
 
 ### Communities 
 
@@ -122,6 +120,12 @@ Example:
 
 Second file contains modularity of Leiden partition.
 
+### Distributions
+
+`distributions.py` defines methods for calculating different distributions, associated with the network,
+such as `authors_per_publications`, `publications_per_authors`, `degree_distribution`, and others.
+
+Please refer to `distributions.ipynb` for examples.
 
 ## Preprocessing
 
