@@ -10,10 +10,10 @@ import networkx as nx
 import igraph as ig
 
 from pfe.misc.style import blue, underlined
-from pfe.misc.log import Log, Pretty
+from pfe.misc.log import Log, Pretty, Nothing
 
 
-def louvain(graph: nx.Graph,  data: Path, log: Log):
+def louvain(graph: nx.Graph,  data: Path, log: Log = Nothing()):
     """Community detection using the Louvain method."""
 
     with log.scope.info(f'Detecting communities using the {underlined | "Louvain"} method.'):
@@ -29,7 +29,7 @@ def louvain(graph: nx.Graph,  data: Path, log: Log):
             json.dump(new_communities, file)
 
 
-def leiden(graph: ig.Graph, data: Path, log: Log):
+def leiden(graph: ig.Graph, data: Path, log: Log = Nothing()):
     """Community detection using the Leiden method."""
 
     odd_vertices = [v.index for v in graph.vs if v.degree() == 2]
