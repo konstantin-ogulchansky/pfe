@@ -43,15 +43,12 @@ if __name__ == '__main__':
             writer.writerows(mapping.items())
 
     # Save the renamed graph to a file.
-    with log.scope.info('Saving the nx graph to a file.'):
+    with log.scope.info('Saving the `nx` graph to a file.'):
         nx.write_weighted_edgelist(graph, data / 'nx_graph_relabeled_nodes.txt')
 
-    with log.scope.info('Saving the ig graph to a file.'):
+    with log.scope.info('Saving the `ig` graph to a file.'):
         encoding = 'utf-8'
         with open(data / 'ig_graph_relabeled_nodes.net', 'wb') as f:
             f.write(f'*Vertices {len(graph.nodes())}\n'.encode(encoding))
             f.write('*Edges\n'.encode(encoding))
             nx.write_weighted_edgelist(graph, f, encoding=encoding)
-
-
-
