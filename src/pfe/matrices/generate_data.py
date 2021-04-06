@@ -6,13 +6,12 @@ from pfe.misc.log import Pretty, Log
 from pfe.misc.style import blue, underlined
 from pfe.parse import publications_in
 
+data = Path('../../../data/graph/ig')
+new_data = Path('test-data')
+
 
 def create_data():
     log: Log = Pretty()
-    log.info('Starting...')
-
-    data = Path('../../../data/graph/ig')
-    test_stuff = Path('test-data')
 
     with log.scope.info('Reading `ig.Graph`...'):
         # graph = ig.Graph.Read_Pajek(str(data / 'ig_full_graph_relabeled_nodes.net'))
@@ -21,8 +20,6 @@ def create_data():
         log.info(f'Read a graph with '
                  f'{blue | len(graph.vs)} vertices and '
                  f'{blue | len(graph.es)} edges.')
-
-    exit()
 
     graph = graph.clusters().giant()
 
@@ -35,11 +32,11 @@ def create_data():
         log.info('The modularity value:        ' + str(blue | communities.modularity))
 
     with log.scope.info('Saving communities into a file...'):
-        with open(test_stuff / 'leiden_communities.json', 'w') as file:
+        with open(new_data / 'leiden_communities.json', 'w') as file:
             json.dump(dict(enumerate(communities)), file)
 
     with log.scope.info('Saving the modularity value into a file...'):
-        with open(test_stuff / 'leiden_modularity.json', 'w') as file:
+        with open(new_data / 'leiden_modularity.json', 'w') as file:
             json.dump(communities.modularity, file)
 
     communities = dict(enumerate(communities))
@@ -52,16 +49,16 @@ def create_data():
     communities = new_dict
 
     with log.scope.info('Saving author-community into a file...'):
-        with open(test_stuff / 'leiden_author-community.json', 'w') as file:
+        with open(new_data / 'leiden_author-community.json', 'w') as file:
             json.dump(communities, file)
 
     with log.scope.info('Reading authors-communities.'):
-        with open(test_stuff / 'leiden_author-community.json', 'r') as file:
+        with open(new_data / 'leiden_author-community.json', 'r') as file:
             communities = json.load(file)
 
     mapping = {}
     # with open(data / 'nx_node_mapping.csv', 'r') as file:
-    with open(test_stuff / 'nx_node_mapping.csv', 'r') as file:
+    with open(new_data / 'nx_node_mapping.csv', 'r') as file:
         reader = csv.reader(file)
         for row in reader:
             mapping[row[0]] = int(row[1])
@@ -69,10 +66,10 @@ def create_data():
     publication_counter = 0
     node_list = [x.index for x in graph.vs]
 
-    with open(test_stuff / 'node_list.txt', 'w') as file:
+    with open(new_data / 'node_list.txt', 'w') as file:
         file.write(str(node_list))
 
-    with open(test_stuff / 'mapping.txt', 'w') as file:
+    with open(new_data / 'mapping.txt', 'w') as file:
         file.write(str(mapping))
 
     with log.scope.info('Delete graph...'):
@@ -120,5 +117,5 @@ def create_data():
             stats.append(statistics)
 
     with log.scope.info('Saving statistics into a file...'):
-        with open(test_stuff / 'stats_largest_cluster.json', 'w') as file:
+        with open(new_data / 'stats_largest_cluster.json', 'w') as file:
             json.dump(stats, file)
