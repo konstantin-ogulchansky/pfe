@@ -16,9 +16,18 @@ from pfe.misc.log import Log, Pretty, Nothing
 def louvain(graph: nx.Graph,  data: Path, log: Log = Nothing()):
     """Community detection using the Louvain method."""
 
+    odd_vertices = [v for v in graph.nodes if graph.degree[v] == 2]
+    log.info(f'Nodes to delete {len(odd_vertices)}')
+
+    graph.remove_nodes_from(odd_vertices)
+
+    for e in graph.edges:
+        graph.edges[e]['weight'] = float(graph.edges[e]['weight'])
+
     with log.scope.info(f'Detecting communities using the {underlined | "Louvain"} method.'):
         communities = community.best_partition(graph)
 
+    return
     with log.scope.info('Saving communities into a file.'):
         new_communities = {}
         for x, y in communities.items():
@@ -27,6 +36,10 @@ def louvain(graph: nx.Graph,  data: Path, log: Log = Nothing()):
 
         with open(data / 'louvain_communities.json', 'w') as file:
             json.dump(new_communities, file)
+
+        with log.scope.info('Saving the modularity value into a file...'):
+            with open(data / 'louvain_modularity_comp.json', 'w') as file:
+                json.dump(community.modularity(communities, graph), file)
 
 
 def leiden(graph: ig.Graph, data: Path, log: Log = Nothing()):
@@ -49,11 +62,11 @@ def leiden(graph: ig.Graph, data: Path, log: Log = Nothing()):
         log.info('The modularity value:        ' + str(blue | communities.modularity))
 
     with log.scope.info('Saving communities into a file...'):
-        with open(data / 'leiden_communities_comp.json', 'w') as file:
+        with open(data / 'leiden_communities_full.json', 'w') as file:
             json.dump(dict(enumerate(communities)), file)
 
     with log.scope.info('Saving the modularity value into a file...'):
-        with open(data / 'leiden_modularity_comp.json', 'w') as file:
+        with open(data / 'leiden_modularity_full.json', 'w') as file:
             json.dump(communities.modularity, file)
 
 
@@ -62,15 +75,15 @@ if __name__ == '__main__':
     log.info('Starting...')
 
     ig_data = Path('../../../data/graph/ig')
+    #
+    # with log.scope.info('Reading `ig.Graph`...'):
+    #     ig_graph = ig.Graph.Read_Pajek(str(ig_data / 'ig_comp_graph_relabeled_nodes.net'))
+    #
+    #     log.info(f'Read a graph with '
+    #              f'{blue | len(ig_graph.vs)} vertices and '
+    #              f'{blue | len(ig_graph.es)} edges.')
 
-    with log.scope.info('Reading `ig.Graph`...'):
-        ig_graph = ig.Graph.Read_Pajek(str(ig_data / 'ig_comp_graph_relabeled_nodes.net'))
-
-        log.info(f'Read a graph with '
-                 f'{blue | len(ig_graph.vs)} vertices and '
-                 f'{blue | len(ig_graph.es)} edges.')
-
-    leiden(ig_graph, ig_data, log)
+    # leiden(ig_graph, ig_data, log)
 
     nx_data = Path('../../../data/graph/nx')
 
