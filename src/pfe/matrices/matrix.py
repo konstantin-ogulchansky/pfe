@@ -56,25 +56,6 @@ def prob_matrix(k: pd.DataFrame):
     return k
 
 
-def draw_matrix(labels, matrix):
-    matrix = [[str(x) for x in row] for row in matrix]
-
-    m = max(map(len, labels))
-    for row in matrix:
-        m = max(m, max(map(len, row)))
-
-    # labels
-    for label in [''] + labels:
-        print(label.ljust(m + 1), end=' ')
-    print()
-
-    # rows
-    for label, row in zip(labels, matrix):
-        for x in [label] + row:
-            print(x.ljust(m + 1), end=' ')
-        print()
-
-
 def matrix(prob=False):
     n_communities = number_of_communities()
     matrix = np.zeros(shape=(n_communities, n_communities))
