@@ -135,6 +135,10 @@ For example, `clean.py` can be used to clean the raw data from redundant fields,
 thus significantly reducing JSON files in size.
 This script can be used right away by simply running it.
 
+## Matrices 
+
+The `matrices` ddirectory contains scripts that are related to creation, modification and visualisation of community(see: Communities) matrices.  
+
 ## Miscellaneous
 
 The `misc` directory contains auxiliary scripts, such as `log.py` or `errors.py`.
