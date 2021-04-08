@@ -9,8 +9,7 @@ from pfe.misc.log import Log, Pretty
 log: Log = Pretty()
 log.info('Starting...')
 
-data = Path('../../../data/graph/ig')
-test_stuff = Path('test-data')
+test_stuff = Path('test-data/COMP-data')
 
 
 def plot_matrix(m: pd.DataFrame, file_name, title='', subtitle='', prob=False, exclude_columns=False):
@@ -29,7 +28,7 @@ def plot_matrix(m: pd.DataFrame, file_name, title='', subtitle='', prob=False, e
         if prob:
             ax = sns.heatmap(m, ax=ax, annot=True, fmt=".4f", cmap="YlGn", linewidths=.5)
         else:
-            ax = sns.heatmap(m, ax=ax, annot=True, fmt="d", cmap="YlGn", linewidths=.5)
+            ax = sns.heatmap(m, ax=ax, annot=True, fmt=".0f", cmap="YlGn", linewidths=.5)
 
         fig.suptitle(title, fontsize=80)
         ax.set_title(subtitle, fontdict=dict(ha='center', va='center', fontsize=70))
