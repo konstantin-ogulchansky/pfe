@@ -6,8 +6,8 @@ from pfe.misc.log import Pretty, Log
 from pfe.misc.style import blue, underlined
 from pfe.parse import publications_in
 
-data = Path('../../../data/graph/ig')
-new_data = Path('test-data')
+data = Path('test-data/COMP-data')
+new_data = Path('test-data/COMP-data')
 
 
 def create_data():
@@ -119,3 +119,5 @@ def create_data():
     with log.scope.info('Saving statistics into a file...'):
         with open(new_data / 'stats_largest_cluster.json', 'w') as file:
             json.dump(stats, file)
+
+create_data()
