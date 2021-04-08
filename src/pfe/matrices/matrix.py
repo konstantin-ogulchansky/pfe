@@ -1,16 +1,17 @@
+import csv
 import json
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+from pfe.matrices.plot_heatmap import plot_matrix
 from pfe.misc.log import Pretty, Log
 
 log: Log = Pretty()
 log.info('Starting...')
 
-data = Path('../../../data/graph/ig')
-test_stuff = Path('test-data')
+test_stuff = Path('test-data/COMP-data')
 
 
 def number_of_communities():
@@ -34,29 +35,43 @@ def community_sizes():
     return community_size
 
 
-def prob_matrix(k: pd.DataFrame):
+def prob_matrix_by_row(k: pd.DataFrame):
+    k = k.copy()
     columns = k.columns.tolist()
     if 'sizes' in columns:
         columns.pop(columns.index('sizes'))
 
-    print(f'Columns: {len(columns)}')
     for i in columns:
         n = sum([k.at[i, j] for j in columns])
-        # print(f'i: {i}')
-        # print([k.at[i, j] for j in columns])
-        # print(f'n: {n}')
         for j in columns:
             if k.at[i, j] == 0:
                 continue
             k.at[i, j] /= n
-        # print([k.at[i, j] for j in columns])
-        # print(f'total: {sum([k.at[i, j] for j in columns])}')
-        # print()
 
     return k
 
 
-def matrix(prob=False):
+def prob_matrix_by_all_publications(k: pd.DataFrame):
+    k = k.copy()
+    columns = k.columns.tolist()
+    if 'sizes' in columns:
+        columns.pop(columns.index('sizes'))
+
+    s = 0
+    for i in columns:
+        for j in columns:
+            if i >= j:
+                s += k.at[i, j]
+
+    print(s)
+    for i in columns:
+        for j in columns:
+            k.at[i, j] /= s
+
+    return k
+
+
+def matrix():
     n_communities = number_of_communities()
     matrix = np.zeros(shape=(n_communities, n_communities))
 
@@ -76,22 +91,22 @@ def matrix(prob=False):
                 c.sort()
                 matrix[c[0], c[1]] += 1
                 matrix[c[1], c[0]] += 1
-
-        if prob:
-            for i in range(n_communities):
-                n = sum([matrix[i][j] for j in range(n_communities)])
-                for j in range(n_communities):
-                    if matrix[i][j] == 0:
-                        continue
-                    matrix[i][j] /= n
+        #
+        # if prob:
+        #     for i in range(n_communities):
+        #         n = sum([matrix[i][j] for j in range(n_communities)])
+        #         for j in range(n_communities):
+        #             if matrix[i][j] == 0:
+        #                 continue
+        #             matrix[i][j] /= n
 
     print(f'N: {n}')
-    # np.savetxt(test_stuff / 'mtr.csv', matrix, fmt='%.4f')
+    np.savetxt(test_stuff / 'mtr.csv', matrix, fmt='%d')
 
     return matrix
 
 
-def fill_diagonal(matrix: pd.DataFrame, prob=False):
+def fill_diagonal(matrix: pd.DataFrame):
     ''' matrix diagonal will be filled with the number of publications inside community'''
 
     n_communities = matrix.columns.tolist()
@@ -111,13 +126,13 @@ def fill_diagonal(matrix: pd.DataFrame, prob=False):
                     if c in n_communities:
                         matrix[c][c] += 1
 
-        if prob:
-            for i in n_communities:
-                n = sum([matrix[i][j] for j in n_communities])
-                for j in n_communities:
-                    if matrix[i][j] == 0:
-                        continue
-                    matrix[i][j] /= n
+        # if prob:
+        #     for i in n_communities:
+        #         n = sum([matrix[i][j] for j in n_communities])
+        #         for j in n_communities:
+        #             if matrix[i][j] == 0:
+        #                 continue
+        #             matrix[i][j] /= n
 
     print(f'N: {n}')
     # np.savetxt(test_stuff / 'mtr_wth_diagonal.csv', matrix, fmt='%.4f')
@@ -136,6 +151,22 @@ def add_row_with_community_size(m: pd.DataFrame):
     m['sizes'] = sizes
 
     return m
+
+
+def add_row_with_publicaation_number(m: pd.DataFrame):
+    k = m.copy()
+
+    n_communities = number_of_communities()
+    df = pd. read_csv(test_stuff/'mtr.csv', names=range(n_communities))
+
+    publications = []
+    for i in range(n_communities):
+        n = sum([int(df[i][j]) for j in range(n_communities)])
+        publications.append(n)
+
+    # k['publications'] = publications
+    print(publications)
+    return k
 
 
 def exclude_columns(m: pd.DataFrame, columns: list):
@@ -163,3 +194,15 @@ def keep_columns(m: pd.DataFrame, columns: list):
     return exclude_columns(m, odd)
 
 
+def to_dataframe(m):
+    n_communities = number_of_communities()
+
+    return pd.DataFrame(m, [str(i) for i in range(n_communities)], [str(i) for i in range(n_communities)])
+
+
+if __name__ == '__main__':
+
+    m = to_dataframe(matrix())
+    fill_diagonal(m)
+
+    plot_matrix(m, 'all_communities')
