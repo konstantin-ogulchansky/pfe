@@ -14,18 +14,28 @@ log.info('Starting...')
 test_stuff = Path('test-data/COMP-data')
 
 
-def number_of_communities():
-    with log.scope.info('Reading communities ...'):
-        with open(test_stuff / 'leiden_communities.json', 'r') as file:
-            communities = json.load(file)
+def number_of_communities(louvain):
+    if louvain:
+        with log.scope.info('Reading communities ...'):
+            with open(test_stuff / 'louvain_communities.json', 'r') as file:
+                communities = json.load(file)
+    else:
+        with log.scope.info('Reading communities ...'):
+            with open(test_stuff / 'leiden_communities.json', 'r') as file:
+                communities = json.load(file)
 
-    return len(communities.keys())
+    return len([x for x in communities.keys()])
 
 
-def community_sizes():
-    with log.scope.info('Reading communities ...'):
-        with open(test_stuff / 'leiden_communities.json', 'r') as file:
-            communities = json.load(file)
+def community_sizes(louvain):
+    if louvain:
+        with log.scope.info('Reading communities ...'):
+            with open(test_stuff / 'louvain_communities.json', 'r') as file:
+                communities = json.load(file)
+    else:
+        with log.scope.info('Reading communities ...'):
+            with open(test_stuff / 'leiden_communities.json', 'r') as file:
+                communities = json.load(file)
 
     community_size = {}
 
@@ -71,8 +81,12 @@ def prob_matrix_by_all_publications(k: pd.DataFrame):
     return k
 
 
-def matrix():
-    n_communities = number_of_communities()
+def matrix(louvain):
+    if louvain:
+        log.warn("Louvain Method is used...")
+
+    n_communities = number_of_communities(louvain)
+    print(n_communities)
     matrix = np.zeros(shape=(n_communities, n_communities))
 
     with log.scope.info('Reading authors-communities...'):
@@ -140,8 +154,8 @@ def fill_diagonal(matrix: pd.DataFrame):
     return matrix
 
 
-def add_row_with_community_size(m: pd.DataFrame):
-    c_sizes = community_sizes()
+def add_row_with_community_size(m: pd.DataFrame, louvain):
+    c_sizes = community_sizes(louvain)
     columns = m.columns.tolist()
 
     sizes = []
@@ -153,10 +167,10 @@ def add_row_with_community_size(m: pd.DataFrame):
     return m
 
 
-def add_row_with_publicaation_number(m: pd.DataFrame):
+def add_row_with_publicaation_number(m: pd.DataFrame, louvain):
     k = m.copy()
 
-    n_communities = number_of_communities()
+    n_communities = number_of_communities(louvain)
     df = pd. read_csv(test_stuff/'mtr.csv', names=range(n_communities))
 
     publications = []
@@ -194,15 +208,15 @@ def keep_columns(m: pd.DataFrame, columns: list):
     return exclude_columns(m, odd)
 
 
-def to_dataframe(m):
-    n_communities = number_of_communities()
+def to_dataframe(m, louvain):
+    n_communities = number_of_communities(louvain)
 
     return pd.DataFrame(m, [str(i) for i in range(n_communities)], [str(i) for i in range(n_communities)])
 
 
 if __name__ == '__main__':
 
-    m = to_dataframe(matrix())
+    m = to_dataframe(matrix(False), False)
     fill_diagonal(m)
 
-    plot_matrix(m, 'all_communities')
+    # plot_matrix(m, 'all_communities (int, Leiden)')
