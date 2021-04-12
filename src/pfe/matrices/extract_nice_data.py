@@ -1,6 +1,3 @@
-
-# TODO: extract publications where at least one author is from Nice
-
 from pathlib import Path
 from typing import Tuple, Any, Iterable
 
@@ -16,13 +13,13 @@ def publications_in(*domains: str,
             return False
 
         for author in publication['authors']:
-            if author['affiliation_city'] == 'Nice':
+            if author['affiliation_city'] in ['Nice', 'Sophia Antipolis']:
                 return True
 
         return False
 
     directory = Path('../../..')
-    new_directory = Path('test-data/COMP')
+    new_directory = Path('test-data/COMP(Nice)')
 
     # Find the root of the repository.
     while all(x.name != '.gitignore' for x in directory.iterdir()):
