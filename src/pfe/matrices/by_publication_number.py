@@ -1,6 +1,4 @@
-from pathlib import Path
-from pfe.misc.log import Pretty, Log
-from pfe.matrices.matrix import matrix, fill_diagonal, prob_matrix, number_of_communities
+from pfe.matrices.matrix import *
 from pfe.matrices.plot_heatmap import plot_matrix
 
 import matplotlib.pyplot as plt
@@ -25,13 +23,13 @@ def plot_cumulative_publications(matrix: pd.DataFrame):
     plt.ylabel('number of publications')
     # plt.axvline(x=percent)
     # plt.savefig(test_stuff / f'cut_{percent}p_of_communities_leaves_Np_of_publications.png')
-    plt.savefig(test_stuff / f'cumulative_publications.png')
+    plt.savefig(data_path / f'cumulative_publications.png')
     plt.show()
 
     # plt.hist(y)
     sns.ecdfplot(y)
     plt.xlabel('number of publications')
-    plt.savefig(test_stuff / f'cumulative_publications_cdf.png')
+    plt.savefig(data_path / f'cumulative_publications_cdf.png')
     plt.show()
 
     # return y[percent - 1]
@@ -59,11 +57,10 @@ def plot_matrix_restricted_by_publication_number(n_publications_in_community, di
     odd_communities = list(set(odd_communities).intersection(odd_communities_2))
     odd_communities.sort()
 
-    k = m.drop(odd_communities)
-    k = k.transpose()
-    k = k.drop(odd_communities)
-    k = k.transpose()
+    m = exclude_columns(odd_communities)
 
-    k = prob_matrix(k)
+    k = prob_matrix_by_row(m)
+    l = prob_matrix_by_all_publications(k)
 
-    plot_matrix(k, f'matrix_restricted_by_publication_number_{n_publications_in_community}', prob=True)
+    plot_matrix(k, f'matrix_restricted_by_publication_number_{n_publications_in_community}_by_row', prob=True)
+    plot_matrix(k, f'matrix_restricted_by_publication_number_{n_publications_in_community}_by_all_publications', prob=True)

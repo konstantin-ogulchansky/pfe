@@ -8,6 +8,7 @@ from pathlib import Path
 import community
 import networkx as nx
 import igraph as ig
+from cdlib import algorithms
 
 from pfe.misc.style import blue, underlined
 from pfe.misc.log import Log, Pretty, Nothing
@@ -16,23 +17,24 @@ from pfe.misc.log import Log, Pretty, Nothing
 def louvain(graph: nx.Graph,  data: Path, log: Log = Nothing()):
     """Community detection using the Louvain method."""
 
-    odd_vertices = [v for v in graph.nodes if graph.degree[v] == 2]
-    log.info(f'Nodes to delete {len(odd_vertices)}')
-
-    graph.remove_nodes_from(odd_vertices)
+    # odd_vertices = [v for v in graph.nodes if graph.degree[v] == 2]
+    # log.info(f'Nodes to delete {len(odd_vertices)}')
+    #
+    # graph.remove_nodes_from(odd_vertices)
 
     for e in graph.edges:
         graph.edges[e]['weight'] = float(graph.edges[e]['weight'])
 
-    with log.scope.info(f'Detecting communities using the {underlined | "Louvain"} method.'):
-        communities = community.best_partition(graph)
+    # graph = max(nx.connected_components(graph), key=len)
 
-    return
+    with log.scope.info(f'Detecting communities using the {underlined | "Louvain"} method.'):
+        communities = community.best_partition(graph, )
+
     with log.scope.info('Saving communities into a file.'):
         new_communities = {}
         for x, y in communities.items():
             new_communities.setdefault(y, [])
-            new_communities[y].append(x)
+            new_communities[y].append(int(x))
 
         with open(data / 'louvain_communities.json', 'w') as file:
             json.dump(new_communities, file)
@@ -70,6 +72,46 @@ def leiden(graph: ig.Graph, data: Path, log: Log = Nothing()):
             json.dump(communities.modularity, file)
 
 
+def leiden_nx(graph: nx.Graph,  data: Path, log: Log = Nothing()):
+    """Community detection using the Leiden method from cdlib."""
+
+    # odd_vertices = [v for v in graph.nodes if graph.degree[v] == 2]
+    # log.info(f'Nodes to delete {len(odd_vertices)}')
+    #
+    # graph.remove_nodes_from(odd_vertices)
+    #
+    # for e in graph.edges:
+    #     graph.edges[e]['weight'] = float(graph.edges[e]['weight'])
+
+
+    with log.scope.info(f'Detecting communities using the {underlined | "Leiden"} method.'):
+        communities = algorithms.leiden(graph)
+
+    modularity = {
+        'modularity_density': communities.modularity_density().score,
+        'erdos_renyi_modularity': communities.erdos_renyi_modularity(),
+        'newman_girvan_modularity': communities.newman_girvan_modularity(),
+        'z_modularity': communities.z_modularity()
+    }
+
+    comm = []
+    for c in communities.communities:
+        if len(c) > 1:
+            comm.append([int(i) for i in c])
+    communities = comm
+
+    with log.scope.info('Saving communities into a file...'):
+        with open(data / 'leiden_communities.json', 'w') as file:
+            json.dump(dict(enumerate(communities)), file)
+
+        # with open(data / 'louvain_communities.json', 'w') as file:
+        #     json.dump(new_communities, file)
+        #
+    with log.scope.info('Saving the modularity value into a file...'):
+        with open(data / 'leiden_cdlib_modularity.json', 'w') as file:
+            json.dump(modularity, file)
+
+
 if __name__ == '__main__':
     log: Log = Pretty()
     log.info('Starting...')
@@ -94,5 +136,4 @@ if __name__ == '__main__':
                  f'{blue | nx_graph.number_of_nodes()} nodes and '
                  f'{blue | nx_graph.number_of_edges()} edges.')
 
-    louvain(nx_graph, nx_data, log)
-
+    leiden_nx(nx_graph, nx_data, log)

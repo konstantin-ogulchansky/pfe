@@ -5,7 +5,7 @@ Contains functions for constructing graphs from JSON files.
 import json
 from decimal import Decimal
 from pathlib import Path
-from typing import Optional, Callable, Union, Tuple, Any, Iterable
+from typing import Optional, Callable, Union, Tuple, Any, Iterable, List
 
 import networkx as nx
 
@@ -84,7 +84,7 @@ def publications_in(*domains: str,
     return publications_from(files, **kwargs)
 
 
-def publications_from(paths: Union[str, list[str]],
+def publications_from(paths: Union[str, List[str]],
                       skip_100: bool = True,
                       where: Optional[Callable] = None,
                       log: Log = Nothing()) -> Iterable[dict]:
@@ -195,6 +195,7 @@ def parse(publications: Iterable[dict], self_loops: bool = True, to: Optional[nx
                     graph.add_edge(u, v, weight=0, collaborations=0)
 
                 graph.edges[u, v]['weight'] += Decimal(1) / Decimal(n - 1 + self_loops)
+                # graph.edges[u, v]['weight'] += Decimal(1)
                 graph.edges[u, v]['collaborations'] += 1
 
     return graph
@@ -206,10 +207,13 @@ if __name__ == '__main__':
 
     log = Pretty()
     log.info('Starting.')
+    for year in range(1990, 2018 +1):
 
-    with log.scope.info('Reading a graph.'):
-        graph = parse(publications_in('COMP', between=(1990, 1996), log=log))
+        with log.scope.info('Reading a graph.'):
+            graph = parse(publications_in('COMP', between=(year, year), log=log), self_loops=True)
 
-        log.info(f'Read a graph with '
-                 f'{blue | graph.number_of_nodes()} nodes and '
-                 f'{blue | graph.number_of_edges()} edges.')
+            log.info(f'Read a graph with '
+                     f'{blue | graph.number_of_nodes()} nodes and '
+                     f'{blue | graph.number_of_edges()} edges.')
+
+        nx.write_weighted_edgelist(graph, f'matrices/test-data/COMP-data/graph/nice/by_year/float_selfloop/nx_comp_nice_{year}_float_selfloops_graph.txt')

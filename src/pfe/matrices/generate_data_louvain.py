@@ -8,20 +8,28 @@ from pfe.misc.style import blue, underlined
 from pfe.parse import publications_in
 from pfe.tasks.communities import louvain
 
-data = Path('test-data/COMP-data')
-new_data = Path('test-data/COMP-data')
+# data = Path('test-data/COMP-data')
+# new_data = Path('test-data/COMP-data')
 
 
-def create_data():
+def create_data_louvain(graph: nx.Graph, mapping_path: Path,  new_data: Path):
     log: Log = Pretty()
 
 
-    with log.scope.info('Reading `nx.Graph`.'):
-        graph = nx.read_weighted_edgelist(data / 'nx_comp_graph_relabeled_nodes_2018.txt')
-        # graph = nx.read_edgelist(data / 'nx_comp_graph_relabeled_nodes.txt', data=False)
-        log.info(f'Read a graph with '
-                 f'{blue | graph.number_of_nodes()} nodes and '
-                 f'{blue | graph.number_of_edges()} edges.')
+    # with log.scope.info('Reading `nx.Graph`.'):
+    #     graph = nx.read_weighted_edgelist(data / 'nx_comp_graph_relabeled_nodes.txt')
+    #     # graph = nx.read_edgelist(data / 'nx_comp_graph_relabeled_nodes.txt', data=False)
+    #
+    #     log.info(f'Read a graph with '
+    #              f'{blue | graph.number_of_nodes()} nodes and '
+    #              f'{blue | graph.number_of_edges()} edges.')
+    #
+    #     largest_component = max(nx.connected_components(graph), key=len)
+    #     graph = nx.subgraph(graph, largest_component)
+    #
+    #     log.info(f'Subgraph of largest connected component '
+    #              f'{blue | graph.number_of_nodes()} nodes and '
+    #              f'{blue | graph.number_of_edges()} edges.')
 
     louvain(graph, new_data, log)
 
@@ -42,7 +50,7 @@ def create_data():
             json.dump(communities, file)
 
     mapping = {}
-    with open(new_data / 'nx_node_mapping.csv', 'r') as file:
+    with open(mapping_path, 'r') as file:
         reader = csv.reader(file)
         for row in reader:
             mapping[row[0]] = int(row[1])
@@ -94,8 +102,8 @@ def create_data():
                         else:
                             statistics[community] = 1
 
-            if publication_counter % 500 == 0:
-                log.info(f'{blue | publication_counter} ...')
+            # if publication_counter % 500 == 0:
+            #     log.info(f'{blue | publication_counter} ...')
 
             stats.append(statistics)
 
@@ -103,4 +111,3 @@ def create_data():
         with open(new_data / 'stats_largest_cluster.json', 'w') as file:
             json.dump(stats, file)
 
-create_data()

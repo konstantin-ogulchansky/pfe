@@ -7,11 +7,11 @@ from pfe.misc.log import Log, Pretty
 log: Log = Pretty()
 log.info('Starting...')
 
-test_stuff = Path('test-data/COMP-data')
+# test_stuff = Path('test-data/COMP-data')
 
 
-def plot_cumulative_community_sizes(percent, louvain=False):
-    community_size = community_sizes(louvain=louvain)
+def plot_cumulative_community_sizes(percent, data_path, louvain=False):
+    community_size = community_sizes(louvain=louvain, data_path=data_path)
 
     y = list(sorted(community_size.values(), reverse=True))
     total = sum(y)
@@ -21,7 +21,7 @@ def plot_cumulative_community_sizes(percent, louvain=False):
 
     def find_index_of(l, val):
         for i in range(len(l)):
-            if abs(l[i] - val) <= .006:
+            if abs(l[i] - val) <= .05:
                 print(i)
                 return i
 
@@ -30,8 +30,9 @@ def plot_cumulative_community_sizes(percent, louvain=False):
     fig, ax = plt.subplots(figsize=(10, 6))
     plt.xscale('log')
     ax.plot(x, 'o')
-    plt.axhline(y=percent)
-    plt.axvline(x=find_index_of(x, percent))
+    if len(community_size) > 10:
+        plt.axhline(y=percent)
+        plt.axvline(x=find_index_of(x, percent))
 
     fig.suptitle(f'Distribution of community sizes ({ "Louvain" if louvain else "Leiden"})')
     ax.set_title(f'To get {percent * 100}% of the network about {find_index_of(x, percent)} largest communities needed')
@@ -40,8 +41,8 @@ def plot_cumulative_community_sizes(percent, louvain=False):
 
     ax.set_axisbelow(True)
     ax.grid(linestyle='--')
-    plt.savefig(test_stuff / f'community_size_{percent}.png')
-    plt.show()
+    plt.savefig(data_path / f'community_size_{ "Louvain" if louvain else "Leiden"}_{percent}.png')
+    # plt.show()
 
     # sns.ecdfplot(community_size)
     # plt.xlabel('community sizes')
@@ -49,21 +50,21 @@ def plot_cumulative_community_sizes(percent, louvain=False):
     # plt.show()
 
 
-def plot_matrix_restricted_by_n_members(n_members, louvain=False):
+def plot_matrix_restricted_by_n_members(n_members, data_path, graph_path, louvain=False):
     odd_communities = get_communities_with_more_than_n_members(n_members)
-    n_communities = number_of_communities(louvain=louvain)
+    n_communities = number_of_communities(louvain=louvain, data_path=data_path)
 
-    m = matrix(louvain)
-    m = to_dataframe(m, louvain)
-    m = add_row_with_community_size(m, louvain)
+    m = matrix(louvain, data_path, graph_path, 'p')
+    m = to_dataframe(m, louvain, data_path)
+    m = add_row_with_community_size(m, louvain, data_path)
 
     m = exclude_columns(m, odd_communities)
-    m = fill_diagonal(m)
+    m = fill_diagonal(m, data_path)
 
     k = prob_matrix_by_row(m)
     l = prob_matrix_by_all_publications(m)
 
-    title = f'Probability matrix ( {"Louvain" if louvain else "Leiden"})'
+    title = Path(f'Probability matrix ( {"Louvain" if louvain else "Leiden"})')
     subtitle = f'Communities with {n_members} or more'
 
     if 'sizes' in k.columns.tolist():
@@ -124,13 +125,13 @@ def get_n_largest_communities(n, louvain=False):
 
 if __name__ == '__main__':
 
-    plot_cumulative_community_sizes(0.8, True)
-    plot_cumulative_community_sizes(0.9, True)
-    plot_cumulative_community_sizes(0.95, True)
-    # plot_cumulative_community_sizes(0.8)
-    # plot_cumulative_community_sizes(0.9)
-    # plot_cumulative_community_sizes(0.95)
-    #
+    # plot_cumulative_community_sizes(0.8, True)
+    # plot_cumulative_community_sizes(0.9, True)
+    # plot_cumulative_community_sizes(0.95, True)
+    plot_cumulative_community_sizes(0.8)
+    plot_cumulative_community_sizes(0.9)
+    plot_cumulative_community_sizes(0.95)
+
     # plot_matrix_restricted_by_n_largest_communities(65)
     # plot_matrix_restricted_by_n_largest_communities(82)
     # plot_matrix_restricted_by_n_largest_communities(94)
