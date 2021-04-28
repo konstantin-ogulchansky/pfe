@@ -1,8 +1,35 @@
 import json
+from os.path import basename
 from pathlib import Path
 
 from pfe.misc.log import Pretty, Log
 from pfe.misc.style import blue
+
+
+def has_numbers(input):
+    return any(char.isdigit() for char in input)
+
+
+def get_year_from_filename(file: Path):
+    year = 0
+    if has_numbers(basename(file)):
+        year = [int(s) for s in basename(file).split('_') if s.isdigit()][0]
+
+    return year
+
+
+def get_mapping(file: Path, graph_folder: Path):
+    if has_numbers(basename(file)):
+        year = [int(s) for s in basename(file).split('_') if s.isdigit()][0]
+
+        for graph_file in graph_folder.iterdir():
+            if graph_file.suffix == '.csv' and str(year) in basename(graph_file):
+                return graph_file
+
+    else:
+        for graph_file in graph_folder.iterdir():
+            if graph_file.suffix == '.csv':
+                return graph_file
 
 
 def show_number_of_publications_among_1_2_3and_more_communities():
