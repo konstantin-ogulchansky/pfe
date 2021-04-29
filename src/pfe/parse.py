@@ -194,8 +194,8 @@ def parse(publications: Iterable[dict], self_loops: bool = True, to: Optional[nx
                 if not graph.has_edge(u, v):
                     graph.add_edge(u, v, weight=0, collaborations=0)
 
-                graph.edges[u, v]['weight'] += Decimal(1) / Decimal(n - 1 + self_loops)
-                # graph.edges[u, v]['weight'] += Decimal(1)
+                # graph.edges[u, v]['weight'] += float(Decimal(1) / Decimal(n - 1 + self_loops))
+                graph.edges[u, v]['weight'] += 1
                 graph.edges[u, v]['collaborations'] += 1
 
     return graph
