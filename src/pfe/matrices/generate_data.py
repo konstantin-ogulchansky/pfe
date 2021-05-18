@@ -1,9 +1,11 @@
 import csv
 import json
+import os
+from os.path import basename
 from pathlib import Path
 import igraph as ig
 from pfe.misc.log import Pretty, Log
-from pfe.misc.style import blue, underlined
+from pfe.misc.style import blue, underlined, magenta
 from pfe.parse import publications_in
 import networkx as nx
 
@@ -224,7 +226,7 @@ def create_data_cdlib_relabeled_graph(graph: nx.Graph,  mapping_path: Path,  new
         json.dump(stats, file)
 
 
-def create_data(graph: nx.Graph, new_data: Path, algorithm: str, publications_till=2018, log_file='', log=Pretty()):
+def create_data(graph: nx.Graph, new_data: Path, algorithm: str, publications_till=2018, log_file=Path(''), log=Pretty()):
     if algorithm == 'leiden':
         leiden_nx(graph, new_data, log)
     elif algorithm == 'louvain':
@@ -268,7 +270,7 @@ def create_data(graph: nx.Graph, new_data: Path, algorithm: str, publications_ti
 
         if log_file != '':
             with open(new_data / log_file, 'a+') as file:
-                file.write(f'{algorithm.capitalize()}: {len(publications)} publications.')
+                file.write(f'{algorithm.capitalize()}: {len(publications)} publications.\n')
 
         stats = []
         for publication in publications:
@@ -306,3 +308,47 @@ def create_data(graph: nx.Graph, new_data: Path, algorithm: str, publications_ti
     log.info('Saving statistics into a file...')
     with open(new_data / f'stats_largest_cluster_{algorithm}.json', 'w') as file:
         json.dump(stats, file)
+
+
+def gererate_ig_leiden_data(log=Pretty()):
+    log_file_name = Path('graph.log')
+    root_path = Path('test-data/COMP-data/graph/nice')
+    folders = [
+        # all_years_f := root_path/Path('all_years/float'),
+        # all_years_i := root_path/Path('all_years/int'),
+        by_year_i := root_path/Path('by_year/int'),
+        by_year_f := root_path / Path('by_year/float'),
+        # by_year_fs := root_path/Path('by_year/float_selfloop'),
+    ]
+
+    for graph_folder in folders:
+        for subfolder in graph_folder.iterdir():
+            if os.path.isdir(subfolder):
+                for graph_file in subfolder.iterdir():
+                    if graph_file.suffix == '.net':
+                        with log.scope.info(f'Reading `ig.Graph`...{magenta | basename(graph_file)}'):
+                            graph = ig.Graph.Read_Pajek(str(graph_file))
+
+                            before = f'Read a graph with ' \
+                                     f'{blue | len(graph.vs)} vertices and ' \
+                                     f'{blue | len(graph.es)} edges.'
+                            log.info(before)
+
+                            graph = graph.clusters().giant()
+
+                            with open(subfolder / log_file_name, 'a+') as log_file:
+                                log_file.write(f'igraph Leiden: Graph: '
+                                               f'{len(graph.vs)} nodes '
+                                               f'and {len(graph.es)} edges.\n')
+
+                            after = f'Subgraph with ' \
+                                    f'{blue | len(graph.vs)} vertices and ' \
+                                    f'{blue | len(graph.es)} edges.'
+                            log.info(after)
+
+                            with open(subfolder / log_file_name, 'a+') as log_file:
+                                log_file.write(f'igraph Leiden: Subgraph, largest component: '
+                                               f'{len(graph.vs)} nodes '
+                                               f'and {len(graph.es)} edges.\n')
+
+                            create_data_igraph(graph, subfolder)
