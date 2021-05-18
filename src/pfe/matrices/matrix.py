@@ -1,5 +1,6 @@
 import csv
 import json
+from operator import itemgetter
 from pathlib import Path
 
 import numpy as np
@@ -10,11 +11,20 @@ from pfe.matrices.plot_heatmap import plot_matrix
 from pfe.misc.log import Pretty, Log
 from pfe.misc.style import blue, magenta
 
-log: Log = Pretty()
-log.info('Starting...')
+
+def sort_matrix(df: pd.DataFrame, year=0):
+    t = [(k, int(v), -df.at[v, k]) for k, v in df.idxmax().items()]
+    print(year, ' communities : ', df.shape[1])
+    print(t)
+
+    t.sort(key=itemgetter(1, 2))
+    new_order = [x[0] for x in t]
+
+    df = df[new_order]
+    return df
 
 
-def number_of_communities(louvain, data_path):
+def number_of_communities(louvain, data_path, log=Pretty()):
     if louvain:
         log.warn('Louvain')
         with log.scope.info('Reading communities ...'):
@@ -29,7 +39,7 @@ def number_of_communities(louvain, data_path):
     return len([x for x in communities.keys()])
 
 
-def community_sizes(louvain, data_path):
+def community_sizes(louvain, data_path, log=Pretty()):
     if louvain:
         with log.scope.info('Reading communities ...'):
             with open(data_path / 'louvain_communities.json', 'r') as file:
@@ -75,7 +85,6 @@ def prob_matrix_by_all_publications(k: pd.DataFrame):
             if i >= j:
                 s += k.at[i, j]
 
-    print(s)
     for i in columns:
         for j in columns:
             k.at[i, j] /= s
@@ -83,17 +92,17 @@ def prob_matrix_by_all_publications(k: pd.DataFrame):
     return k
 
 
-def matrix(louvain, data_path, graph_path,  content='publication'):
+def matrix(louvain, data_path, graph: nx.Graph,  content='publication', log=Pretty()):
     with log.scope.info(f'Preparing matrix content...{blue | content}'):
 
         if content in ['publication', 'publications', 'pub', 'p']:
             return publications_matrix(louvain=louvain, data_path=data_path)
 
         if content in ['collaboration', 'collaborations', 'collab', 'c']:
-            return collaboration_matrix(louvain=louvain, data_path=data_path, graph_path=graph_path)
+            return collaboration_matrix(louvain=louvain, data_path=data_path, graph=graph)
 
 
-def publications_matrix(louvain, data_path):
+def publications_matrix(louvain, data_path, log=Pretty()):
     if louvain:
         log.warn("Louvain Method is used...")
     else:
@@ -125,7 +134,7 @@ def publications_matrix(louvain, data_path):
     return matrix
 
 
-def collaboration_matrix(louvain, data_path, graph_path):
+def collaboration_matrix(louvain, data_path, graph: nx.Graph, log=Pretty()):
     if louvain:
         log.warn("Louvain Method is used...")
     else:
@@ -134,9 +143,9 @@ def collaboration_matrix(louvain, data_path, graph_path):
     n_communities = number_of_communities(louvain=louvain, data_path=data_path)
     matrix = np.zeros(shape=(n_communities, n_communities))
 
-    # networkx graph is more suitable for current tack
-    with log.scope.info('Reading `nx.Graph`.'):
-        graph = nx.read_weighted_edgelist(graph_path)
+    # # networkx graph is more suitable for current tack
+    # with log.scope.info('Reading `nx.Graph`.'):
+    #     graph = nx.read_weighted_edgelist(graph_path)
 
     log.info(f'Read a graph with '
              f'{blue | graph.number_of_nodes()} nodes and '
@@ -193,7 +202,7 @@ def collaboration_matrix(louvain, data_path, graph_path):
     return matrix
 
 
-def fill_diagonal(matrix: pd.DataFrame, data_path):
+def fill_diagonal(matrix: pd.DataFrame, data_path, log=Pretty()):
     ''' matrix diagonal will be filled with the number of publications inside community'''
 
     n_communities = matrix.columns.tolist()
@@ -242,20 +251,20 @@ def add_row_with_community_size(m: pd.DataFrame, louvain, data_path):
     return m
 
 
-def add_row_with_publication_number(m: pd.DataFrame, louvain, data_path):
-    k = m.copy()
-
-    n_communities = number_of_communities(louvain, data_path)
-    df = pd. read_csv(data_path / 'mtr.csv', names=range(n_communities))
-
-    publications = []
-    for i in range(n_communities):
-        n = sum([int(df[i][j]) for j in range(n_communities)])
-        publications.append(n)
-
-    # k['publications'] = publications
-    print(publications)
-    return k
+# def add_row_with_publication_number(m: pd.DataFrame, louvain, data_path):
+#     k = m.copy()
+#
+#     n_communities = number_of_communities(louvain, data_path)
+#     df = pd. read_csv(data_path / 'mtr.csv', names=range(n_communities))
+#
+#     publications = []
+#     for i in range(n_communities):
+#         n = sum([int(df[i][j]) for j in range(n_communities)])
+#         publications.append(n)
+#
+#     # k['publications'] = publications
+#     print(publications)
+#     return k
 
 
 def exclude_columns(m: pd.DataFrame, columns: list):
@@ -283,10 +292,10 @@ def keep_columns(m: pd.DataFrame, columns: list):
     return exclude_columns(m, odd)
 
 
-def to_dataframe(m, louvain, data_path):
-    n_communities = number_of_communities(louvain, data_path)
-
-    return pd.DataFrame(m, [str(i) for i in range(n_communities)], [str(i) for i in range(n_communities)])
+def to_dataframe(m: np.ndarray, louvain, data_path):
+    # n_communities = number_of_communities(louvain, data_path)
+    m, n = m.shape
+    return pd.DataFrame(m, [str(i) for i in range(m)], [str(i) for i in range(n)])
 
 
 def matrix_from_file(content:str, algorithm:str, data_path):
