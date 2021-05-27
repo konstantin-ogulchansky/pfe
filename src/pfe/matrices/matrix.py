@@ -7,9 +7,25 @@ import numpy as np
 import pandas as pd
 import networkx as nx
 
-from pfe.matrices.plot_heatmap import plot_matrix
-from pfe.misc.log import Pretty, Log
+from pfe.misc.log import Pretty
 from pfe.misc.style import blue, magenta
+
+
+def difference(matr_18: np.ndarray, matr_year: np.ndarray):
+    min_len = min(len(matr_18), len(matr_year))
+    new_matr = np.zeros((min_len, min_len))
+
+    for i in range(min_len):
+        for j in range(min_len):
+            # if matr_18[i, j] == 0:
+            if matr_18[i, j] == 0:
+                    continue
+            new_matr[i, j] = ((matr_18[i, j] - matr_year[i, j]) / matr_18[i, j])
+
+            # new_matr[i, j] = ((matr_year[i, j] - matr_18[i, j]) / matr_year[i, j])/100
+            # new_matr[i, j] = (matr_18[i, j] - matr_year[i, j])
+
+    return new_matr
 
 
 def sort_matrix(df: pd.DataFrame, year=0):
@@ -58,7 +74,7 @@ def community_sizes(louvain, data_path, log=Pretty()):
 
 
 def prob_matrix_by_row(k: pd.DataFrame):
-    # k = k.copy()
+    k = k.copy()
     columns = k.columns.tolist()
     if 'sizes' in columns:
         columns.pop(columns.index('sizes'))
@@ -103,6 +119,10 @@ def matrix(louvain, data_path, graph: nx.Graph,  content='publication', log=Pret
 
 
 def publications_matrix(louvain, data_path, log=Pretty()):
+    '''
+    generates matrix that consists of the number of publications between communities i,j
+    '''
+
     if louvain:
         log.warn("Louvain Method is used...")
     else:
@@ -112,7 +132,7 @@ def publications_matrix(louvain, data_path, log=Pretty()):
     matrix = np.zeros(shape=(n_communities, n_communities))
 
     with log.scope.info('Reading authors-communities...'):
-        with open(data_path / 'stats_largest_cluster.json', 'r') as file:
+        with open(data_path / f'stats_largest_cluster_{"louvain" if louvain else "leiden"}.json', 'r') as file:
             stats = json.load(file)
 
     with log.scope.info('Filling matrix...'):
@@ -127,6 +147,13 @@ def publications_matrix(louvain, data_path, log=Pretty()):
                 c.sort()
                 matrix[c[0], c[1]] += 1
                 matrix[c[1], c[0]] += 1
+
+            if len(s) == 1:
+                n += 1
+                for k in s.keys():
+                    c = k.split()[1]
+                    if c in n_communities:
+                        matrix[c][c] += 1
 
     log.info(f'# publications: {blue| n} \t# communities {blue| n_communities}')
     np.savetxt(data_path / f'mtr_{"louvain" if louvain else "leiden"}.csv', matrix, fmt='%d')
@@ -292,10 +319,12 @@ def keep_columns(m: pd.DataFrame, columns: list):
     return exclude_columns(m, odd)
 
 
-def to_dataframe(m: np.ndarray, louvain, data_path):
+def to_dataframe(m: np.ndarray):
     # n_communities = number_of_communities(louvain, data_path)
-    m, n = m.shape
-    return pd.DataFrame(m, [str(i) for i in range(m)], [str(i) for i in range(n)])
+    # print(m.shape)
+    # (m, n) = m.shape
+
+    return pd.DataFrame(m, [str(i) for i in range(m.shape[0])], [str(i) for i in range(m.shape[1])])
 
 
 def matrix_from_file(content:str, algorithm:str, data_path):
@@ -316,11 +345,11 @@ def matrix_from_file(content:str, algorithm:str, data_path):
             return np.loadtxt(data_path / 'mtr_louvain.csv')
 
 
-if __name__ == '__main__':
-    data_path = Path('test-data/COMP-data')
+# if __name__ == '__main__':
+    # data_path = Path('test-data/COMP-data')
     # graph_path = Path('graph/nice')
     # m = matrix_from_file('p', 'louvain')
-    matrix(louvain=False, content='c', data_path=data_path)
+    # matrix(louvain=False, content='c', data_path=data_path)
     # m = to_dataframe(m, louvain=False)
     # # fill_diagonal(m)
     # m = add_row_with_community_size(m, louvain=False)
