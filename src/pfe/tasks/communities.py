@@ -28,7 +28,8 @@ def louvain(graph: nx.Graph,  data: Path, log: Log = Nothing()):
     # graph = max(nx.connected_components(graph), key=len)
 
     with log.scope.info(f'Detecting communities using the {underlined | "Louvain"} method.'):
-        communities = community.best_partition(graph, )
+        communities = community.best_partition(graph, weight='weight')
+
 
     with log.scope.info('Saving communities into a file.'):
         new_communities = {}
@@ -36,12 +37,19 @@ def louvain(graph: nx.Graph,  data: Path, log: Log = Nothing()):
             new_communities.setdefault(y, [])
             new_communities[y].append(int(x))
 
-        with open(data / 'louvain_communities.json', 'w') as file:
-            json.dump(new_communities, file)
+        new_communities = new_communities.values()
+        sorted(new_communities, key=len, reverse=True)
 
+        with open(data / 'louvain_communities.json', 'w') as file:
+            json.dump(dict(enumerate(new_communities)), file)
+
+        modularity = community.modularity(communities, graph)
         with log.scope.info('Saving the modularity value into a file...'):
             with open(data / 'louvain_modularity_comp.json', 'w') as file:
-                json.dump(community.modularity(communities, graph), file)
+                json.dump(modularity, file)
+
+        with open(data / 'graph.log', 'a+') as file:
+            file.write(f'Leiden: {modularity}\n')
 
 
 def leiden(graph: ig.Graph, data: Path, log: Log = Nothing()):
@@ -63,6 +71,8 @@ def leiden(graph: ig.Graph, data: Path, log: Log = Nothing()):
         log.info('The number of communities:   ' + str(blue | len(communities)))
         log.info('The modularity value:        ' + str(blue | communities.modularity))
 
+    sorted(communities, key=len, reverse=True)
+
     with log.scope.info('Saving communities into a file...'):
         with open(data / 'leiden_communities_full.json', 'w') as file:
             json.dump(dict(enumerate(communities)), file)
@@ -70,6 +80,9 @@ def leiden(graph: ig.Graph, data: Path, log: Log = Nothing()):
     with log.scope.info('Saving the modularity value into a file...'):
         with open(data / 'leiden_modularity_full.json', 'w') as file:
             json.dump(communities.modularity, file)
+
+    with open(data / 'graph.log', 'a+') as file:
+        file.write(f'Leiden: {communities.modularity}\n')
 
 
 def leiden_nx(graph: nx.Graph,  data: Path, log: Log = Nothing()):
@@ -82,7 +95,6 @@ def leiden_nx(graph: nx.Graph,  data: Path, log: Log = Nothing()):
     #
     # for e in graph.edges:
     #     graph.edges[e]['weight'] = float(graph.edges[e]['weight'])
-
 
     with log.scope.info(f'Detecting communities using the {underlined | "Leiden"} method.'):
         communities = algorithms.leiden(graph)
@@ -99,6 +111,7 @@ def leiden_nx(graph: nx.Graph,  data: Path, log: Log = Nothing()):
         if len(c) > 1:
             comm.append([int(i) for i in c])
     communities = comm
+    sorted(communities, key=len, reverse=True)
 
     with log.scope.info('Saving communities into a file...'):
         with open(data / 'leiden_communities.json', 'w') as file:
@@ -110,6 +123,9 @@ def leiden_nx(graph: nx.Graph,  data: Path, log: Log = Nothing()):
     with log.scope.info('Saving the modularity value into a file...'):
         with open(data / 'leiden_cdlib_modularity.json', 'w') as file:
             json.dump(modularity, file)
+
+    with open(data / 'graph.log', 'a+') as file:
+        file.write(f'Leiden: {modularity["newman_girvan_modularity"]}\n')
 
 
 if __name__ == '__main__':
