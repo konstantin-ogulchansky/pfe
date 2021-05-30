@@ -2,8 +2,11 @@ import json
 from os.path import basename
 from pathlib import Path
 
+import networkx as nx
+
 from pfe.misc.log import Pretty, Log
 from pfe.misc.style import blue
+from pfe.parse import publications_in, parse
 
 
 def has_numbers(input):
@@ -37,10 +40,10 @@ def show_number_of_publications_among_1_2_3and_more_communities():
     log.info('Starting...')
 
     data = Path('../../../data/graph/ig')
-    test_stuff = Path('test-data')
+    test_stuff = Path('test-data/COMP-data/graph/nice/by_year/int/nx_comp_nice_2018_int_graph')
 
     with log.scope.info('Reading authors-communities...'):
-        with open(test_stuff / 'stats_largest_cluster.json', 'r') as file:
+        with open(test_stuff / 'stats_largest_cluster_leiden.json', 'r') as file:
             stats = json.load(file)
 
     n = 0
@@ -74,3 +77,38 @@ def show_number_of_publications_among_1_2_3and_more_communities():
     print(one_comm / (n - z))
     print(two_comm / (n - z))
     print(all_other_comm / (n - z))
+
+show_number_of_publications_among_1_2_3and_more_communities()
+
+
+def generate_graphs_by_year():
+    '''
+    generates graphs(GraphML) that consists of publications
+    between 1990 and 'year'
+    '''
+    from pfe.misc.log import Pretty
+    from pfe.misc.style import blue
+
+    path = Path('matrices/test-data/COMP-data/graph/full_comp/int_by_year')
+
+    log = Pretty()
+    with log.scope.info('Starting.'):
+        # for year in range(2013, 2016):
+        #
+        #     graph = parse(all_publications(between=(1990, year), log=log))
+        #     nx.write_graphml(graph, path / Path(f'nx_int_graph_{year}.xml'))
+
+        for year in range(1990, 2018 +1):
+
+            with log.scope.info('Reading a graph.'):
+                graph = parse(publications_in('COMP', between=(1990, year), log=log), self_loops=False)
+
+                log.info(f'Read a graph with '
+                         f'{blue | graph.number_of_nodes()} nodes and '
+                         f'{blue | graph.number_of_edges()} edges.')
+
+                with open(path / 'graph.log', 'a+') as log_file:
+                    log_file.write(f'Graph {1990, year}: '
+                                   f'{graph.number_of_nodes()} nodes and {graph.number_of_edges()} edges.\n')
+
+            nx.write_graphml(graph, path / Path(f'nx_comp_{year}_int_graph.xml'))
