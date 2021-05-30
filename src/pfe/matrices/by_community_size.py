@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 from pfe.matrices.matrix import *
-from pfe.matrices.plot_heatmap import plot_matrix
+# from pfe.matrices.plot_heatmap import plot_matrix
 from pfe.misc.log import Log, Pretty
 
 log: Log = Pretty()
@@ -49,59 +49,59 @@ def plot_cumulative_community_sizes(percent, data_path, louvain=False):
     # plt.savefig(test_stuff / f'community_size_cdf.png')
     # plt.show()
 
+#
+# def plot_matrix_restricted_by_n_members(n_members, data_path, graph_path, louvain=False):
+#     odd_communities = get_communities_with_more_than_n_members(n_members)
+#     n_communities = number_of_communities(louvain=louvain, data_path=data_path)
+#
+#     m = matrix(louvain, data_path, graph_path, 'p')
+#     m = to_dataframe(m, louvain, data_path)
+#     m = add_row_with_community_size(m, louvain, data_path)
+#
+#     m = exclude_columns(m, odd_communities)
+#     m = fill_diagonal(m, data_path)
+#
+#     k = prob_matrix_by_row(m)
+#     l = prob_matrix_by_all_publications(m)
+#
+#     title = Path(f'Probability matrix ( {"Louvain" if louvain else "Leiden"})')
+#     subtitle = f'Communities with {n_members} or more'
+#
+#     if 'sizes' in k.columns.tolist():
+#         plot_matrix(k, f'matrix_restricted_by_n_members_{n_members}_prob_by_row', title, subtitle, prob=True,
+#                     exclude_columns=True)
+#         plot_matrix(l, f'matrix_restricted_by_n_members_{n_members}_prob_by_upper_triangular', title, subtitle, prob=True,
+#                     exclude_columns=True)
+#     else:
+#         plot_matrix(k, f'matrix_restricted_by_n_members_{n_members}_prob_by_row', title, subtitle, prob=True)
+#         plot_matrix(l, f'matrix_restricted_by_n_members_{n_members}_prob_by_upper_triangular', title, subtitle, prob=True)
+#
 
-def plot_matrix_restricted_by_n_members(n_members, data_path, graph_path, louvain=False):
-    odd_communities = get_communities_with_more_than_n_members(n_members)
-    n_communities = number_of_communities(louvain=louvain, data_path=data_path)
-
-    m = matrix(louvain, data_path, graph_path, 'p')
-    m = to_dataframe(m, louvain, data_path)
-    m = add_row_with_community_size(m, louvain, data_path)
-
-    m = exclude_columns(m, odd_communities)
-    m = fill_diagonal(m, data_path)
-
-    k = prob_matrix_by_row(m)
-    l = prob_matrix_by_all_publications(m)
-
-    title = Path(f'Probability matrix ( {"Louvain" if louvain else "Leiden"})')
-    subtitle = f'Communities with {n_members} or more'
-
-    if 'sizes' in k.columns.tolist():
-        plot_matrix(k, f'matrix_restricted_by_n_members_{n_members}_prob_by_row', title, subtitle, prob=True,
-                    exclude_columns=True)
-        plot_matrix(l, f'matrix_restricted_by_n_members_{n_members}_prob_by_upper_triangular', title, subtitle, prob=True,
-                    exclude_columns=True)
-    else:
-        plot_matrix(k, f'matrix_restricted_by_n_members_{n_members}_prob_by_row', title, subtitle, prob=True)
-        plot_matrix(l, f'matrix_restricted_by_n_members_{n_members}_prob_by_upper_triangular', title, subtitle, prob=True)
-
-
-def plot_matrix_restricted_by_n_largest_communities(n_largest, louvain=False):
-    largest_communities = get_n_largest_communities(n_largest, louvain=louvain)
-
-    m = matrix(louvain)
-    m = to_dataframe(m, louvain)
-    m = add_row_with_community_size(m, louvain)
-
-    m = keep_columns(m, largest_communities)
-    m = fill_diagonal(m)
-
-    k = prob_matrix_by_row(m)
-    l = prob_matrix_by_all_publications(m)
-
-    title = 'Probability matrix'
-    subtitle = f'{n_largest} largest communities'
-
-    if 'sizes' in k.columns.tolist():
-        plot_matrix(k, f'matrix_restricted_by_n_largest_communities_{n_largest}_prob_by_row', title, subtitle, prob=True,
-                    exclude_columns=True)
-        plot_matrix(l, f'matrix_restricted_by_n_largest_communities_{n_largest}_prob_by_upper_triangular', title, subtitle, prob=True,
-                    exclude_columns=True)
-    else:
-        plot_matrix(k, f'matrix_restricted_by_n_largest_communities_{n_largest}_prob_by_row', title, subtitle, prob=True)
-        plot_matrix(l, f'matrix_restricted_by_n_largest_communities_{n_largest}_prob_by_upper_triangular', title, subtitle, prob=True)
-
+# def plot_matrix_restricted_by_n_largest_communities(n_largest, louvain=False):
+#     largest_communities = get_n_largest_communities(n_largest, louvain=louvain)
+#
+#     m = matrix(louvain)
+#     m = to_dataframe(m, louvain)
+#     m = add_row_with_community_size(m, louvain)
+#
+#     m = keep_columns(m, largest_communities)
+#     m = fill_diagonal(m)
+#
+#     k = prob_matrix_by_row(m)
+#     l = prob_matrix_by_all_publications(m)
+#
+#     title = 'Probability matrix'
+#     subtitle = f'{n_largest} largest communities'
+#
+#     if 'sizes' in k.columns.tolist():
+#         plot_matrix(k, f'matrix_restricted_by_n_largest_communities_{n_largest}_prob_by_row', title, subtitle, prob=True,
+#                     exclude_columns=True)
+#         plot_matrix(l, f'matrix_restricted_by_n_largest_communities_{n_largest}_prob_by_upper_triangular', title, subtitle, prob=True,
+#                     exclude_columns=True)
+#     else:
+#         plot_matrix(k, f'matrix_restricted_by_n_largest_communities_{n_largest}_prob_by_row', title, subtitle, prob=True)
+#         plot_matrix(l, f'matrix_restricted_by_n_largest_communities_{n_largest}_prob_by_upper_triangular', title, subtitle, prob=True)
+#
 
 def get_communities_with_more_than_n_members(n_members, louvain=False):
     c_sizes = community_sizes(louvain=louvain)
