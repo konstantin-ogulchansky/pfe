@@ -16,7 +16,7 @@ from pfe.misc.style import blue
 from pfe.parse import publications_in
 import matplotlib.pyplot as plt
 
-def p_matrix_year(year, graph, log=Pretty()):
+def p_matrix_year(year, graph, diagonal:bool, log=Pretty()):
     data_path_18 = Path('test-data/COMP-data/graph/nice/by_year/int/nx_comp_nice_2018_int_graph')
 
     with log.scope.info('Reading communities ...'):
@@ -65,7 +65,7 @@ def p_matrix_year(year, graph, log=Pretty()):
         n = 0
         for s in stats:
             s.pop('publication_id')
-            if len(s) == 1:
+            if len(s) == 1 and diagonal:
                 n += 1
                 c = []
                 for i, k in zip(range(len(s)), s.keys()):
@@ -92,8 +92,11 @@ graph_path = lambda year: Path(root_path / f'nx_comp_nice_{year}_int_graph.xml')
 algorithms = ['leiden']
 contents = ['publications', 'collaborations']
 content = 'publications'
+versions = [True, False]
 
-for algorithm in algorithms:
+# for algorithm in algorithms:
+for diagonal in versions:
+
     labex = []
     with open("C:/Users/2shel/Desktop/Labex.json", 'r', encoding='UTF-8') as file:
         labex_publications = json.load(file)
@@ -109,21 +112,18 @@ for algorithm in algorithms:
 
     labex_groups = []
     for lb in labex:
-        if len(lb) == 1:
-            continue
         for i in lb:
             for j in lb:
-                if i == j:
+                if i == j and not diagonal:
                     continue
                 labex_groups.append((i, j))
     labex_groups = list(set(labex_groups))
 
-
-    matr_18 = p_matrix_year(2018, graph=nx.read_graphml(graph_path(2018)))
+    matr_18 = p_matrix_year(2018, graph=nx.read_graphml(graph_path(2018)), diagonal=diagonal)
     matr_18_df = to_dataframe(matr_18)
 
     plot_matrix(matr_18_df,
-                file_name=f'n_publications_18_communities_2018',
+                file_name=f'n_publications_18_communities_2018{"_no_diagonal"*(not diagonal)}',
                 data_path=root_path,
                 title=f'Publications matrix 2018',
                 format="0.0f",
@@ -135,11 +135,11 @@ for algorithm in algorithms:
     for year in range(2013, 2018):
         graph_year = nx.read_graphml(graph_path(year))
 
-        matr_year = p_matrix_year(year, graph_year)
+        matr_year = p_matrix_year(year, graph_year, diagonal)
 
         matr_year_df = to_dataframe(matr_year)
         plot_matrix(matr_year_df,
-                    file_name=f'n_publications_{year-2000}_communities_2018',
+                    file_name=f'n_publications_{year-2000}_communities_2018{"_no_diagonal"*(not diagonal)}',
                     data_path=root_path,
                     title=f'Publications matrix {year}',
                     subtitle='Communities from 2018',
@@ -153,7 +153,7 @@ for algorithm in algorithms:
         diff_matr = to_dataframe(diff_matr)
 
         plot_matrix(diff_matr,
-                    file_name=f'difference_{content}_18_{year-2000}_div_{18}_by_row',
+                    file_name=f'difference_{content}_18_{year-2000}_div_{18}_by_row{"_no_diagonal"*(not diagonal)}',
                     data_path=root_path,
                     title=f'Difference 2018 and {year} ',
                     subtitle=f'{content.capitalize()} prob by row \n Pij({2018})-Pij({year})/Pij({2018})',
@@ -161,7 +161,7 @@ for algorithm in algorithms:
                     prob=True, some=labex_groups)
 
         plot_matrix(matr_18_df.subtract(matr_year_df),
-                    file_name=f'difference_{content}_18_{year - 2000}',
+                    file_name=f'difference_{content}_18_{year - 2000}{"_no_diagonal"*(not diagonal)}',
                     data_path=root_path,
                     title=f'Difference 2018 and {year} ',
                     format="0.0f",
@@ -170,14 +170,14 @@ for algorithm in algorithms:
 
         labex_values = []
         for i, j in labex_groups:
-            if i == j:
+            if i == j and not diagonal:
                 continue
             labex_values.append(diff_matr.loc[str(i), str(j)])
 
         other_values = []
         for i in range(diff_matr.shape[0]):
             for j in range(diff_matr.shape[0]):
-                if i == j:
+                if i == j and not diagonal:
                     continue
                 if (i, j) not in labex_groups:
                     other_values.append(diff_matr.loc[str(i), str(j)])
@@ -191,4 +191,4 @@ for algorithm in algorithms:
 
         ax.set_title(f'Boxplot 2018/{year}')
 
-        plt.savefig(root_path / f'boxplot_{year}.png')
+        plt.savefig(root_path / f'boxplot_{year}{"_no_diagonal"*(not diagonal)}.png')
