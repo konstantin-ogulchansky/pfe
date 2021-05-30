@@ -160,6 +160,12 @@ def parse(publications: Iterable[dict], self_loops: bool = True, to: Optional[nx
         return result
 
     graph = to if to is not None else nx.Graph()
+    labex = []
+    with open("C:/Users/2shel/Desktop/Labex.json", 'r', encoding='UTF-8') as file:
+        labex_publications = json.load(file)
+
+    for lp in labex_publications:
+        labex += lp['ids'].keys()
 
     for publication in publications:
         authors = publication['authors']
@@ -172,6 +178,8 @@ def parse(publications: Iterable[dict], self_loops: bool = True, to: Optional[nx
 
             if not graph.has_node(u):
                 graph.add_node(u, name=author['name'], publications=0)
+                if author['id'] in labex:
+                    graph.nodes[u]['labex'] = 1
 
             graph.nodes[u]['publications'] += 1
 
@@ -205,15 +213,26 @@ if __name__ == '__main__':
     from pfe.misc.log import Pretty
     from pfe.misc.style import blue
 
+    path = Path('matrices/test-data/COMP-data/graph/full_comp/int_by_year')
+
     log = Pretty()
-    log.info('Starting.')
-    for year in range(1990, 2018 +1):
+    with log.scope.info('Starting.'):
+        # for year in range(2013, 2016):
+        #
+        #     graph = parse(all_publications(between=(1990, year), log=log))
+        #     nx.write_graphml(graph, path / Path(f'nx_int_graph_{year}.xml'))
 
-        with log.scope.info('Reading a graph.'):
-            graph = parse(publications_in('COMP', between=(year, year), log=log), self_loops=True)
+        for year in range(1990, 2018 +1):
 
-            log.info(f'Read a graph with '
-                     f'{blue | graph.number_of_nodes()} nodes and '
-                     f'{blue | graph.number_of_edges()} edges.')
+            with log.scope.info('Reading a graph.'):
+                graph = parse(publications_in('COMP', between=(1990, year), log=log), self_loops=False)
 
-        nx.write_weighted_edgelist(graph, f'matrices/test-data/COMP-data/graph/nice/by_year/float_selfloop/nx_comp_nice_{year}_float_selfloops_graph.txt')
+                log.info(f'Read a graph with '
+                         f'{blue | graph.number_of_nodes()} nodes and '
+                         f'{blue | graph.number_of_edges()} edges.')
+
+                with open(path / 'graph.log', 'a+') as log_file:
+                    log_file.write(f'Graph {1990, year}: '
+                                   f'{graph.number_of_nodes()} nodes and {graph.number_of_edges()} edges.\n')
+
+            nx.write_graphml(graph, path / Path(f'nx_comp_{year}_int_graph.xml'))
