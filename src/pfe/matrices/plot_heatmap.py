@@ -14,7 +14,7 @@ from matplotlib.colors import ListedColormap
 from matplotlib.patches import Rectangle
 
 from pfe.matrices.by_community_size import plot_cumulative_community_sizes
-from pfe.matrices.generate_data import create_data, create_data_cdlib_relabeled_graph, create_data_igraph
+from pfe.matrices.generate_data import create_data
 # from pfe.matrices.matrix import matrix, to_dataframe, fill_diagonal, \
 #     add_row_with_community_size, prob_matrix_by_row, prob_matrix_by_all_publications
 from pfe.matrices.semiusefull_stuff import get_mapping
