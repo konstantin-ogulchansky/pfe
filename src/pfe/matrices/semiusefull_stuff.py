@@ -6,7 +6,7 @@ import networkx as nx
 
 from pfe.misc.log import Pretty, Log
 from pfe.misc.style import blue
-from pfe.parse import publications_in, parse
+from pfe.parse import publications_in, parse, all_publications
 
 
 def has_numbers(input):
@@ -78,18 +78,14 @@ def show_number_of_publications_among_1_2_3and_more_communities():
     print(two_comm / (n - z))
     print(all_other_comm / (n - z))
 
-show_number_of_publications_among_1_2_3and_more_communities()
-
 
 def generate_graphs_by_year():
     '''
     generates graphs(GraphML) that consists of publications
     between 1990 and 'year'
     '''
-    from pfe.misc.log import Pretty
-    from pfe.misc.style import blue
 
-    path = Path('matrices/test-data/COMP-data/graph/full_comp/int_by_year')
+    path = Path('matrices/test-data/All-disc')
 
     log = Pretty()
     with log.scope.info('Starting.'):
@@ -101,7 +97,7 @@ def generate_graphs_by_year():
         for year in range(1990, 2018 +1):
 
             with log.scope.info('Reading a graph.'):
-                graph = parse(publications_in('COMP', between=(1990, year), log=log), self_loops=False)
+                graph = parse(all_publications(between=(1990, year), log=log), self_loops=False)
 
                 log.info(f'Read a graph with '
                          f'{blue | graph.number_of_nodes()} nodes and '
@@ -111,4 +107,4 @@ def generate_graphs_by_year():
                     log_file.write(f'Graph {1990, year}: '
                                    f'{graph.number_of_nodes()} nodes and {graph.number_of_edges()} edges.\n')
 
-            nx.write_graphml(graph, path / Path(f'nx_comp_{year}_int_graph.xml'))
+            nx.write_graphml(graph, path / Path(f'nx_full_{year}_int_graph.xml'))
